@@ -1,0 +1,153 @@
+import { GlossaryEntry } from './types';
+
+export const GLOSSARY: GlossaryEntry[] = [
+  {
+    term: 'Collection',
+    definition: 'A group of documents sharing the same schema, similar to a database table. Each collection generates REST endpoints, a GraphQL type, and an admin UI list view automatically.',
+    example: `export const Posts: CollectionConfig = { slug: 'posts', fields: [...] }`,
+    relatedTerms: ['Document', 'Global', 'Slug'],
+  },
+  {
+    term: 'Global',
+    definition: 'A singleton document with no list view — used for site-wide settings, headers, footers, and configuration. Only one instance exists per Global.',
+    example: `export const Header: GlobalConfig = { slug: 'header', fields: [...] }`,
+    relatedTerms: ['Collection', 'Singleton'],
+  },
+  {
+    term: 'Local API',
+    definition: 'Zero-latency, in-process API that bypasses HTTP entirely. Used in server components, hooks, and scripts where the Payload instance is available in the same Node.js process.',
+    example: `const payload = await getPayload({ config })\nconst posts = await payload.find({ collection: 'posts' })`,
+    relatedTerms: ['REST API', 'GraphQL', 'getPayload'],
+  },
+  {
+    term: 'Hook',
+    definition: 'An async function that runs at a specific lifecycle event — beforeChange, afterChange, beforeRead, afterRead, beforeDelete, afterDelete. Used to transform data, trigger side effects, or enforce business rules.',
+    example: `afterChange: [async ({ doc, req }) => { await syncToAlgolia(doc) }]`,
+    relatedTerms: ['Lifecycle', 'Access Control', 'Middleware'],
+  },
+  {
+    term: 'Access Control',
+    definition: 'A function attached to a collection or field that returns a boolean or a Payload where query. Determines whether an operation is permitted for the given user and request context.',
+    example: `access: { read: ({ req: { user } }) => Boolean(user) }`,
+    relatedTerms: ['Role', 'Hook', 'RBAC'],
+  },
+  {
+    term: 'Field',
+    definition: 'A typed property on a Collection or Global document. Payload provides 20+ built-in types: text, number, richText, relationship, upload, array, blocks, group, tabs, and more.',
+    example: `{ name: 'title', type: 'text', required: true }`,
+    relatedTerms: ['Collection', 'Virtual Field', 'Blocks'],
+  },
+  {
+    term: 'Blocks',
+    definition: 'A dynamic array field type that allows editors to compose pages from heterogeneous block schemas — like a flexible page builder. Each block has its own slug and field set.',
+    example: `{ name: 'layout', type: 'blocks', blocks: [HeroBlock, CTABlock] }`,
+    relatedTerms: ['Array', 'Field', 'Layout Builder'],
+  },
+  {
+    term: 'Relationship Field',
+    definition: 'Links documents across collections (one-to-one, one-to-many, or polymorphic). Payload resolves the linked documents to the specified depth level on read.',
+    example: `{ name: 'author', type: 'relationship', relationTo: 'users' }`,
+    relatedTerms: ['Join Field', 'Depth', 'Population'],
+  },
+  {
+    term: 'Join Field',
+    definition: 'A read-only virtual field that creates a bi-directional reverse relationship without storing any extra data in the database. Defined on the "one" side of a one-to-many.',
+    example: `{ name: 'posts', type: 'join', collection: 'posts', on: 'author' }`,
+    relatedTerms: ['Relationship', 'Virtual Field', 'Reverse Populate'],
+  },
+  {
+    term: 'Depth',
+    definition: 'Controls how many levels deep Payload auto-populates relationship and upload fields on read. depth: 0 returns raw IDs; depth: 2 populates nested relationships two levels deep.',
+    example: `await payload.find({ collection: 'posts', depth: 2 })`,
+    relatedTerms: ['Population', 'Relationship', 'Performance'],
+  },
+  {
+    term: 'Draft',
+    definition: 'A saved version of a document that is not yet published. Enabled via the versions.drafts config. Drafts are stored in a separate _versions table and never returned by public read queries.',
+    example: `versions: { drafts: { autosave: { interval: 2000 } } }`,
+    relatedTerms: ['Version', 'Publish', 'Status'],
+  },
+  {
+    term: 'Version',
+    definition: 'A snapshot of a document at a point in time. Payload stores up to maxPerDoc versions per document, enabling rollback and audit history.',
+    example: `versions: { maxPerDoc: 100, drafts: true }`,
+    relatedTerms: ['Draft', 'Revision', 'History'],
+  },
+  {
+    term: 'Where Query',
+    definition: 'Payload\'s structured JSON filter syntax for querying documents. Operators include equals, not_equals, like, contains, in, greater_than, less_than, exists, and, or.',
+    example: `where: { status: { equals: 'published' }, category: { equals: 'tech' } }`,
+    relatedTerms: ['Query', 'Filter', 'Local API'],
+  },
+  {
+    term: 'Payload Config',
+    definition: 'The central payload.config.ts file that registers all collections, globals, plugins, the database adapter, rich text editor, auth settings, and deployment configuration.',
+    example: `export default buildConfig({ collections: [Posts, Users, Media] })`,
+    relatedTerms: ['buildConfig', 'Plugin', 'Adapter'],
+  },
+  {
+    term: 'Plugin',
+    definition: 'A function that receives and returns a Payload config, allowing packages to extend collections, add globals, inject hooks, or modify existing schemas in a composable way.',
+    example: `plugins: [seoPlugin({ collections: ['posts'] })]`,
+    relatedTerms: ['Config', 'Extension', 'Adapter'],
+  },
+  {
+    term: 'Storage Adapter',
+    definition: 'A plugin that intercepts file uploads and routes them to external storage — S3, R2, GCS, Azure Blob, Cloudinary, etc. — instead of the local filesystem.',
+    example: `plugins: [s3Storage({ collections: { media: true }, bucket: 'my-bucket' })]`,
+    relatedTerms: ['Upload', 'Media', 'Plugin'],
+  },
+  {
+    term: 'Lexical',
+    definition: 'The default rich text editor in Payload 3.x, built on Meta\'s Lexical framework. Highly extensible with custom nodes, features, converters (HTML, MDX), and slash commands.',
+    example: `editor: lexicalEditor({ features: [BoldFeature(), LinkFeature()] })`,
+    relatedTerms: ['richText', 'Field', 'Editor'],
+  },
+  {
+    term: 'Jobs Queue',
+    definition: 'Payload\'s built-in background task system. Tasks are persisted to the database and executed by workers. Supports retries, scheduling, and custom task handlers.',
+    example: `payload.jobs.queue({ task: 'send-email', input: { to: 'user@example.com' } })`,
+    relatedTerms: ['Background Task', 'Worker', 'Scheduler'],
+  },
+  {
+    term: 'RBAC',
+    definition: 'Role-Based Access Control. The pattern of assigning roles (admin, editor, viewer) to users and writing access control functions that check req.user.role to permit or deny operations.',
+    example: `read: ({ req: { user } }) => user?.role === 'admin' ? true : { _status: { equals: 'published' } }`,
+    relatedTerms: ['Access Control', 'Role', 'User'],
+  },
+  {
+    term: 'Live Preview',
+    definition: 'A built-in Payload feature that renders your frontend in an iframe inside the admin panel. The admin panel broadcasts draft data to the preview via postMessage as editors type.',
+    example: `admin: { livePreview: { url: ({ doc }) => \`https://mysite.com/posts/\${doc.slug}\` } }`,
+    relatedTerms: ['Draft', 'Admin UI', 'Preview'],
+  },
+  {
+    term: 'Localization',
+    definition: 'Payload\'s built-in i18n system that makes any field locale-aware. Localized fields store separate values per locale in the database and are returned filtered by the requested locale.',
+    example: `localization: { locales: ['en', 'fr', 'de'], defaultLocale: 'en', fallback: true }`,
+    relatedTerms: ['i18n', 'Translation', 'Field'],
+  },
+  {
+    term: 'Drizzle ORM',
+    definition: 'The ORM used by Payload\'s PostgreSQL and SQLite adapters. Provides type-safe query building, schema introspection, and migration generation from your Payload config.',
+    relatedTerms: ['Postgres', 'SQLite', 'Migration'],
+  },
+  {
+    term: 'Migration',
+    definition: 'A timestamped SQL script generated by `payload migrate:create` that syncs your database schema to match your current Payload config. Run with `payload migrate`.',
+    example: `pnpm payload migrate:create add_category_field\npnpm payload migrate`,
+    relatedTerms: ['Drizzle', 'Schema', 'Database'],
+  },
+  {
+    term: 'Virtual Field',
+    definition: 'A field that does not persist to the database. Used for computed properties, UI-only controls, or derived values. Set with `virtual: true`.',
+    example: `{ name: 'fullName', type: 'text', virtual: true, hooks: { afterRead: [... ] } }`,
+    relatedTerms: ['Hook', 'Field', 'Computed'],
+  },
+  {
+    term: 'Endpoint',
+    definition: 'A custom route registered directly on a collection or globally. Receives a PayloadRequest (Node.js Request extension) and returns a Response object — no Express needed.',
+    example: `endpoints: [{ path: '/stats', method: 'get', handler: async (req) => Response.json({ count: 42 }) }]`,
+    relatedTerms: ['REST', 'Handler', 'Route'],
+  },
+];

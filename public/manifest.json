@@ -1,0 +1,16 @@
+{
+  "name": "Payload CMS 3.x Academy",
+  "short_name": "PayloadAcademy",
+  "description": "The definitive interactive developer academy and certification course for Payload CMS 3.x and Next.js App Router.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090a0f",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
