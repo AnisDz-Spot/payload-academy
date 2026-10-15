@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     // createUser now returns { user, verificationToken } — NO session yet
-    const { user, verificationToken } = createUser({
+    const { user, verificationToken } = await createUser({
       email,
       password,
       name: name || '',

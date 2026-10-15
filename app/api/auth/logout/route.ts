@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const sessionToken = req.cookies.get('pa_session')?.value;
     if (sessionToken) {
-      deleteSession(sessionToken);
+      await deleteSession(sessionToken);
     }
 
     const response = NextResponse.json({ success: true });

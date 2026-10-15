@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ user: null, isGuest: true });
     }
 
-    const sessionData = getSessionUser(sessionToken);
+    const sessionData = await getSessionUser(sessionToken);
     if (!sessionData) {
       const res = NextResponse.json({ user: null, isGuest: true });
       res.cookies.delete('pa_session');

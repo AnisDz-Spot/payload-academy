@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Valid email address required' }, { status: 400 });
     }
 
-    const user = getUserByEmail(email);
+    const user = await getUserByEmail(email);
     if (!user) {
       // Intentionally vague to prevent email enumeration
       return NextResponse.json({ success: true });
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This email is already verified.' }, { status: 400 });
     }
 
-    const result = refreshVerificationToken(email);
+    const result = await refreshVerificationToken(email);
     if (!result) {
       return NextResponse.json({ error: 'Could not refresh verification token.' }, { status: 400 });
     }

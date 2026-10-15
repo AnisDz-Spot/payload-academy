@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const { user, session } = authenticateUser(email, password);
+    const { user, session } = await authenticateUser(email, password);
 
     // If there is guest progress to merge, merge it into user's DB progress
     let mergedProgress = null;
     if (guestProgress && typeof guestProgress === 'object') {
-      mergedProgress = saveUserProgress(user.id, guestProgress);
+      mergedProgress = await saveUserProgress(user.id, guestProgress);
     }
 
     const sanitizedUser = {

@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, isGuest: true, message: 'Not authenticated' });
     }
 
-    const sessionData = getSessionUser(sessionToken);
+    const sessionData = await getSessionUser(sessionToken);
     if (!sessionData) {
       return NextResponse.json({ success: false, isGuest: true, message: 'Invalid session' });
     }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Save progress
-    const updatedProgress = saveUserProgress(sessionData.user.id, {
+    const updatedProgress = await saveUserProgress(sessionData.user.id, {
       completedLessons,
       completedQuizzes,
       examScore,
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     // If pro status provided and changed
     if (typeof isPro === 'boolean' && planType) {
-      updateUserProStatus(sessionData.user.id, isPro, planType);
+      await updateUserProStatus(sessionData.user.id, isPro, planType);
     }
 
     return NextResponse.json({

@@ -39,9 +39,9 @@ export async function POST(req: NextRequest) {
       console.log('[Stripe webhook] Checkout completed:', session.id, 'Plan:', planId, 'Email:', customerEmail);
       
       if (userId) {
-        updateUserProStatus(userId, true, planId);
+        await updateUserProStatus(userId, true, planId);
       } else if (customerEmail) {
-        updateUserProStatusByEmail(customerEmail, true, planId);
+        await updateUserProStatusByEmail(customerEmail, true, planId);
       }
       break;
     }
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       const isSubActive = subscription.status === 'active' || subscription.status === 'trialing';
       const userId = subscription.metadata?.userId;
       if (userId) {
-        updateUserProStatus(userId, isSubActive, isSubActive ? 'monthly' : 'free');
+        await updateUserProStatus(userId, isSubActive, isSubActive ? 'monthly' : 'free');
       }
       break;
     }
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       console.log('[Stripe webhook] Subscription canceled:', subscription.id);
       const userId = subscription.metadata?.userId;
       if (userId) {
-        updateUserProStatus(userId, false, 'free');
+        await updateUserProStatus(userId, false, 'free');
       }
       break;
     }
