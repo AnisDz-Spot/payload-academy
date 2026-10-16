@@ -365,31 +365,11 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsAdmin(prev => !prev);
   }, []);
 
-  const recordQuizPass = useCallback((lessonId: string) => {
-    setCompletedQuizzes(prev => {
-      if (prev[lessonId]) return prev;
-      recordStudyDay();
-      return { ...prev, [lessonId]: true };
-    });
-  }, [recordStudyDay]);
-
-  const setExamScore = useCallback((score: number) => {
-    setExamScoreState(score);
-    recordStudyDay();
-    try {
-      window.localStorage.setItem('pa-exam-score', score.toString());
-    } catch {}
-  }, [recordStudyDay]);
-
-  // ── toggleComplete — with module celebration ───────────────────
-  const toggleComplete = useCallback((lessonId: string) => {
+  // ── completeLesson — idempotently mark a lesson done (with module celebration) ──
+  const completeLesson = useCallback((lessonId: string) => {
     setCompletedLessons(prev => {
-      const next = { ...prev };
-      if (next[lessonId]) {
-        delete next[lessonId];
-        return next;
-      }
-      next[lessonId] = true;
+      if (prev[lessonId]) return prev;
+      const next = { ...prev, [lessonId]: true };
 
       // Record study activity
       recordStudyDay();
@@ -407,6 +387,37 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return next;
     });
   }, [recordStudyDay]);
+
+  const recordQuizPass = useCallback((lessonId: string) => {
+    setCompletedQuizzes(prev => {
+      if (prev[lessonId]) return prev;
+      recordStudyDay();
+      return { ...prev, [lessonId]: true };
+    });
+    // Passing a lesson's quiz marks the lesson itself complete.
+    completeLesson(lessonId);
+  }, [recordStudyDay, completeLesson]);
+
+  const setExamScore = useCallback((score: number) => {
+    setExamScoreState(score);
+    recordStudyDay();
+    try {
+      window.localStorage.setItem('pa-exam-score', score.toString());
+    } catch {}
+  }, [recordStudyDay]);
+
+  // ── toggleComplete — with module celebration ───────────────────
+  const toggleComplete = useCallback((lessonId: string) => {
+    if (completedLessons[lessonId]) {
+      setCompletedLessons(prev => {
+        const next = { ...prev };
+        delete next[lessonId];
+        return next;
+      });
+      return;
+    }
+    completeLesson(lessonId);
+  }, [completedLessons, completeLesson]);
 
   const setNote = (lessonId: string, note: string) => {
     setUserNotes(prev => ({ ...prev, [lessonId]: note }));
