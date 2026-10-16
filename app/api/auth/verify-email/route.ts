@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyEmailToken, createSessionForUser } from '@/lib/db';
 
-const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+function resolveAppUrl(req: NextRequest): string {
+  const explicit = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (explicit) return explicit.replace(/\/+$/, '');
+  // Fall back to the host the request actually arrived on (correct on Vercel),
+  // so this never points at localhost in production.
+  return req.nextUrl.origin;
+}
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
+  const appUrl = resolveAppUrl(req);
 
   if (!token) {
-    return NextResponse.redirect(`${APP_URL}/verify-email?status=missing`);
+    return NextResponse.redirect(`${appUrl}/verify-email?status=missing`);
   }
 
   const user = await verifyEmailToken(token);
 
   if (!user) {
-    return NextResponse.redirect(`${APP_URL}/verify-email?status=invalid`);
+    return NextResponse.redirect(`${appUrl}/verify-email?status=invalid`);
   }
 
   // Email verified — now create a session and auto-log in
   const session = await createSessionForUser(user.id);
 
-  const response = NextResponse.redirect(`${APP_URL}/verify-email?status=success`);
+  const response = NextResponse.redirect(`${appUrl}/verify-email?status=success`);
   response.cookies.set({
     name: 'pa_session',
     value: session.token,

@@ -25,10 +25,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const appUrl =
+    const appUrl = (
+      process.env.APP_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
       req.headers.get('origin') ||
-      'http://localhost:3000';
+      req.nextUrl.origin
+    ).replace(/\/+$/, '');
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
