@@ -27,22 +27,30 @@ export async function POST(req: NextRequest) {
     // Send the verification email (non-blocking — we still return 200 even if email
     // delivery fails, so the account is created and the user can request a resend).
     let previewUrl: string | undefined;
+    let emailSent = false;
+    let warning: string | undefined;
     try {
       const result = await sendVerificationEmail({
         toEmail: user.email,
         name: user.name,
         token: verificationToken,
       });
+      emailSent = true;
       previewUrl = result.previewUrl;
     } catch (emailErr) {
       console.error('Verification email send failed:', emailErr);
+      warning =
+        emailErr instanceof Error
+          ? emailErr.message
+          : 'The verification email could not be sent.';
     }
 
     return NextResponse.json({
       success: true,
-      emailSent: true,
+      emailSent,
       email: user.email,
       name: user.name,
+      ...(warning ? { warning } : {}),
       // Only included in development so the UI can show the Ethereal preview link
       ...(process.env.NODE_ENV !== 'production' && previewUrl ? { previewUrl } : {}),
     });

@@ -29,6 +29,7 @@ export const AuthModal: React.FC = () => {
   const [emailSent, setEmailSent] = useState(false);
   const [sentToEmail, setSentToEmail] = useState('');
   const [devPreviewUrl, setDevPreviewUrl] = useState('');
+  const [emailWarning, setEmailWarning] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMsg, setResendMsg] = useState('');
 
@@ -42,6 +43,7 @@ export const AuthModal: React.FC = () => {
     setEmailSent(false);
     setSentToEmail('');
     setDevPreviewUrl('');
+    setEmailWarning('');
     setResendMsg('');
     setActiveModal('none');
   };
@@ -77,6 +79,7 @@ export const AuthModal: React.FC = () => {
         if (soundEnabled) playSuccessChime();
         setSentToEmail(email);
         setDevPreviewUrl((res as { previewUrl?: string }).previewUrl || '');
+        setEmailWarning((res as { warning?: string }).warning || '');
         setEmailSent(true);
       } else {
         setErrorMsg(res.error || 'Failed to create account');
@@ -167,13 +170,29 @@ export const AuthModal: React.FC = () => {
               }}>📬</div>
 
               <div style={{ fontSize: 20, fontWeight: 800, color: '#ffffff', marginBottom: 10 }}>
-                Check your inbox!
+                {emailWarning ? 'Account created' : 'Check your inbox!'}
               </div>
               <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.75, marginBottom: 20 }}>
-                We sent a verification link to{' '}
-                <strong style={{ color: '#a5b4fc' }}>{sentToEmail}</strong>.<br />
-                Click the link to activate your account — it expires in <strong style={{ color: '#f8fafc' }}>24 hours</strong>.
+                {emailWarning ? (
+                  <>We couldn&apos;t send the verification email to{' '}
+                  <strong style={{ color: '#a5b4fc' }}>{sentToEmail}</strong>.</>
+                ) : (
+                  <>We sent a verification link to{' '}
+                  <strong style={{ color: '#a5b4fc' }}>{sentToEmail}</strong>.<br />
+                  Click the link to activate your account — it expires in <strong style={{ color: '#f8fafc' }}>24 hours</strong>.</>
+                )}
               </div>
+
+              {emailWarning && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 10, marginBottom: 16,
+                  background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)',
+                  textAlign: 'left',
+                }}>
+                  <div style={{ fontSize: 11, color: '#f87171', fontWeight: 700, marginBottom: 4 }}>⚠️ Email not sent</div>
+                  <div style={{ fontSize: 11, color: '#fca5a5', lineHeight: 1.6 }}>{emailWarning}</div>
+                </div>
+              )}
 
               {/* Dev Ethereal preview link */}
               {devPreviewUrl && (

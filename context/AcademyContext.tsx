@@ -586,9 +586,10 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
 
       // Registration now requires email verification before a session is issued.
-      // The server returns { success, email, name, previewUrl? } — NOT a user object.
-      // We do NOT set user state here; the user must click the verification link first.
-      return { success: true, previewUrl: data.previewUrl };
+      // The server returns { success, email, name, emailSent, warning?, previewUrl? } —
+      // NOT a user object. We do NOT set user state here; the user must click the
+      // verification link first.
+      return { success: true, previewUrl: data.previewUrl, emailSent: data.emailSent, warning: data.warning };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Network error';
       return { success: false, error: message };

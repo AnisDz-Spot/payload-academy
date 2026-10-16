@@ -35,10 +35,14 @@ export async function POST(req: NextRequest) {
       previewUrl = emailResult.previewUrl;
     } catch (emailErr) {
       console.error('Resend verification email failed:', emailErr);
+      const message =
+        emailErr instanceof Error ? emailErr.message : 'Failed to send verification email';
+      return NextResponse.json({ error: message }, { status: 502 });
     }
 
     return NextResponse.json({
       success: true,
+      emailSent: true,
       ...(process.env.NODE_ENV !== 'production' && previewUrl ? { previewUrl } : {}),
     });
   } catch (err: unknown) {

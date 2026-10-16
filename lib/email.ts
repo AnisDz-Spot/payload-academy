@@ -4,10 +4,25 @@ import crypto from 'crypto';
 // ── Environment config ────────────────────────────────────────────
 const EMAIL_HOST = process.env.EMAIL_HOST || 'smtp.gmail.com';
 const EMAIL_PORT = parseInt(process.env.EMAIL_PORT || '587', 10);
+const EMAIL_SECURE = process.env.EMAIL_SECURE === 'true' || EMAIL_PORT === 465;
 const EMAIL_USER = process.env.EMAIL_USER || '';
 const EMAIL_PASS = process.env.EMAIL_PASS || '';
 const EMAIL_FROM = process.env.EMAIL_FROM || `"Payload Academy" <noreply@payload-academy.dev>`;
-const APP_URL   = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+// Resolve the public base URL used in email links. Prefer an explicit APP_URL,
+// then fall back to the Vercel-provided deployment domain, then localhost.
+function resolveAppUrl(): string {
+  const explicit = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (explicit) return explicit.replace(/\/+$/, '');
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return 'http://localhost:3000';
+}
+const APP_URL = resolveAppUrl();
+
+// True when a real SMTP provider is configured (as opposed to the Ethereal
+// development fallback, which never delivers to real inboxes).
+export const isEmailConfigured = Boolean(EMAIL_USER && EMAIL_PASS);
 
 // ── Token generation ─────────────────────────────────────────────
 export function generateVerificationToken(): string {
@@ -20,18 +35,16 @@ export function tokenExpiry(minutes = 60 * 24): Date {
 
 // ── Nodemailer transport ─────────────────────────────────────────
 function createTransport() {
-  // Preview mode: if no credentials are set, use Nodemailer's built-in
-  // Ethereal test account (messages won't actually deliver, but the
-  // preview URL is logged to the console — great for development).
+  // Returns null when no SMTP credentials are configured. Callers must treat
+  // that as "cannot send" in production (never silently pretend to send).
   if (!EMAIL_USER || !EMAIL_PASS) {
-    // Return null; caller will use preview mode
     return null;
   }
 
   return nodemailer.createTransport({
     host: EMAIL_HOST,
     port: EMAIL_PORT,
-    secure: EMAIL_PORT === 465,
+    secure: EMAIL_SECURE,
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
@@ -165,7 +178,13 @@ export async function sendVerificationEmail(params: {
   const transport = createTransport();
 
   if (!transport) {
-    // No credentials — use Ethereal preview (development only)
+    if (process.env.NODE_ENV === 'production') {
+      // Fail loudly instead of silently using Ethereal (which never delivers).
+      throw new Error(
+        'Email is not configured. Set EMAIL_HOST, EMAIL_PORT, EMAIL_USER and EMAIL_PASS in your environment variables, plus APP_URL.'
+      );
+    }
+    // Development only — Ethereal preview (no real delivery to an inbox).
     const testAccount = await nodemailer.createTestAccount();
     const previewTransport = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
@@ -201,6 +220,11 @@ export async function sendPasswordResetEmail(params: {
 
   const transport = createTransport();
   if (!transport) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'Email is not configured. Set EMAIL_HOST, EMAIL_PORT, EMAIL_USER and EMAIL_PASS in your environment variables, plus APP_URL.'
+      );
+    }
     const testAccount = await nodemailer.createTestAccount();
     const previewTransport = nodemailer.createTransport({
       host: 'smtp.ethereal.email', port: 587, secure: false,
