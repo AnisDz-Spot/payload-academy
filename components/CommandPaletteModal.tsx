@@ -35,6 +35,9 @@ export const CommandPaletteModal: React.FC = () => {
 
   const quickActions = [
     { id: 'act-tour', title: '✨ Start Student Onboarding Tour', subtitle: 'Action', action: () => setActiveModal('onboarding') },
+    { id: 'act-home', title: '🏠 Go to Academy Home', subtitle: 'Navigation', action: () => { router.push('/start'); setActiveModal('none'); } },
+    { id: 'act-lessons', title: '🗂️ Browse the Lesson Library', subtitle: 'Navigation', action: () => { router.push('/lessons'); setActiveModal('none'); } },
+    { id: 'act-cards', title: '🃏 Study Glossary Flashcards', subtitle: 'Tool', action: () => { router.push('/flashcards'); setActiveModal('none'); } },
     { id: 'act-pricing', title: '💳 View Pricing & Subscribe', subtitle: 'Action', action: () => { router.push('/pricing'); setActiveModal('none'); } },
     { id: 'act-live', title: '🖥️ Open Live Preview & postMessage Studio', subtitle: 'Tool', action: () => { router.push('/live-preview-simulator'); setActiveModal('none'); } },
     { id: 'act-rbac', title: '🛡️ Open Visual RBAC & RLS Matrix Simulator', subtitle: 'Tool', action: () => { router.push('/rbac-matrix'); setActiveModal('none'); } },

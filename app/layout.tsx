@@ -16,9 +16,49 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.APP_URL ||
+  'https://payload-academy-tawny.vercel.app'
+).replace(/\/$/, '');
+
 export const metadata: Metadata = {
-  title: 'Payload Academy – Master Payload CMS 3.x',
-  description: 'The definitive code-first Payload CMS mastery course. Master collections, fields, access control, hooks, auth, rich text, jobs, plugins, storage adapters, AI/RAG integrations, Server Actions, transactions, and production deployment with Payload 3.x and Next.js 15.',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'Payload Academy — Master Payload CMS 3.x',
+    template: '%s | Payload Academy',
+  },
+  description:
+    'The definitive code-first Payload CMS mastery course. 50 hands-on lessons across 9 modules with AST-graded coding challenges, quizzes, and a certificate — covering collections, fields, access control, hooks, auth, rich text, jobs, plugins, storage, AI/RAG, and production deployment with Payload 3.x and Next.js 16.',
+  applicationName: 'Payload Academy',
+  keywords: [
+    'Payload CMS', 'Payload 3.x', 'Next.js 16', 'headless CMS tutorial',
+    'Payload CMS course', 'TypeScript CMS', 'Payload collections', 'Payload access control',
+    'Payload hooks', 'Payload plugins', 'Payload auth',
+  ],
+  authors: [{ name: 'Payload Academy' }],
+  creator: 'Payload Academy',
+  category: 'education',
+  alternates: { canonical: '/' },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'Payload Academy',
+    title: 'Payload Academy — Master Payload CMS 3.x',
+    description:
+      'Learn Payload CMS 3.x end-to-end: 50 lessons, 9 modules, 50 graded coding challenges, and a verifiable certificate. Built for Next.js 16.',
+    url: SITE_URL,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Payload Academy — Master Payload CMS 3.x',
+    description:
+      'Learn Payload CMS 3.x end-to-end: 50 lessons, 9 modules, 50 graded coding challenges, and a verifiable certificate.',
+  },
 };
 
 export default function RootLayout({

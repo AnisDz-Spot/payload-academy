@@ -10,8 +10,9 @@ function SuccessContent() {
   const sessionId = searchParams.get('session_id') || '';
   const { setIsPro, setPlanType } = useAcademy();
 
-  const [confetti, setConfetti] = useState<Array<{ id: number; x: number; color: string; delay: number; dur: number }>>([]);
+  const [confetti, setConfetti] = useState<Array<{ id: number; x: number; color: string; delay: number; dur: number; round: boolean }>>([]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- activate Pro and generate confetti exactly once on mount */
   useEffect(() => {
     // Activate Pro status immediately
     setIsPro(true);
@@ -25,9 +26,11 @@ function SuccessContent() {
       color: colors[i % colors.length],
       delay: Math.random() * 1.5,
       dur: 1.5 + Math.random() * 2,
+      round: Math.random() > 0.5,
     }));
     setConfetti(pieces);
   }, [plan, setIsPro, setPlanType]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const planLabel =
     plan === 'monthly' ? 'Pro Monthly'
@@ -49,7 +52,7 @@ function SuccessContent() {
               width: 10,
               height: 10,
               background: c.color,
-              borderRadius: Math.random() > 0.5 ? '50%' : 2,
+              borderRadius: c.round ? '50%' : 2,
               animation: `confettiFall ${c.dur}s ease-in ${c.delay}s forwards`,
               opacity: 0,
             }}

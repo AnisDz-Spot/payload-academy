@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { neon } from '@neondatabase/serverless';
+import { computeXp, levelFromXp, xpStateFromProgress } from './xp';
 
 export interface DbUser {
   id: string;
@@ -133,6 +134,18 @@ async function runSchemaDdl(): Promise<void> {
   `;
   await sql`CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS users_verification_token_idx ON users (verification_token)`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS certificates (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      recipient_name TEXT NOT NULL,
+      recipient_email TEXT,
+      score INTEGER NOT NULL,
+      issued_at TIMESTAMPTZ NOT NULL,
+      signature TEXT NOT NULL
+    )
+  `;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS certificates_user_id_idx ON certificates (user_id)`;
 }
 
 // ── Row mapping ───────────────────────────────────────────────────
@@ -173,6 +186,63 @@ interface SessionRow {
   user_id: string;
   created_at: string | Date;
   expires_at: string | Date;
+}
+
+export interface DbCertificate {
+  id: string;
+  userId: string | null;
+  recipientName: string;
+  recipientEmail: string | null;
+  score: number;
+  issuedAt: string;
+  signature: string;
+}
+
+interface CertificateRow {
+  id: string;
+  user_id: string | null;
+  recipient_name: string;
+  recipient_email: string | null;
+  score: number;
+  issued_at: string | Date;
+  signature: string;
+}
+
+function rowToCertificate(r: CertificateRow): DbCertificate {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    recipientName: r.recipient_name,
+    recipientEmail: r.recipient_email,
+    score: r.score,
+    issuedAt: toIso(r.issued_at) ?? new Date().toISOString(),
+    signature: r.signature,
+  };
+}
+
+// Tamper-evident seal over a certificate's immutable fields. Anyone can verify
+// a sealed assertion by recomputing it with the server's signing secret.
+export function computeCertificateSignature(cert: {
+  id: string;
+  recipientName: string;
+  score: number;
+  issuedAt: string;
+}): string {
+  const secret =
+    process.env.CERTIFICATE_SIGNING_SECRET ||
+    process.env.DATABASE_URL ||
+    'payload-academy-dev-secret';
+  return crypto
+    .createHmac('sha256', secret)
+    .update(`${cert.id}|${cert.recipientName}|${cert.score}|${cert.issuedAt}`)
+    .digest('hex');
+}
+
+export function verifyCertificateSignature(cert: DbCertificate): boolean {
+  const expected = computeCertificateSignature(cert);
+  const a = Buffer.from(expected, 'hex');
+  const b = Buffer.from(cert.signature, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 function toIso(value: string | Date | null): string | undefined {
@@ -524,6 +594,71 @@ export async function getUserProgress(userId: string): Promise<DbUserProgress | 
 // Alias for external callers (used by verify-email API route)
 export const getUserProgressByUserId = getUserProgress;
 
+// ── Leaderboard ───────────────────────────────────────────────────
+interface LeaderboardRow {
+  id: string;
+  name: string;
+  avatar: string | null;
+  is_pro: boolean;
+  completed_lessons: Record<string, boolean> | null;
+  completed_quizzes: Record<string, boolean> | null;
+  exam_score: number | null;
+  user_notes: Record<string, string> | null;
+  bookmarks: Record<string, boolean> | null;
+  study_days: string[] | null;
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  name: string;
+  avatar?: string;
+  xp: number;
+  level: number;
+  isPro: boolean;
+  completedLessons: number;
+  streak: number;
+}
+
+// Ranks every non-admin user by total XP, computed from their synced progress.
+export async function getLeaderboard(limit = 50): Promise<LeaderboardEntry[]> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = (await sql`
+    SELECT u.id, u.name, u.avatar, u.is_pro,
+           p.completed_lessons, p.completed_quizzes, p.exam_score,
+           p.user_notes, p.bookmarks, p.study_days
+    FROM users u
+    LEFT JOIN progress p ON p.user_id = u.id
+    WHERE u.role <> 'admin'
+  `) as unknown as LeaderboardRow[];
+
+  const entries = rows.map((r) => {
+    const state = xpStateFromProgress({
+      completedLessons: r.completed_lessons ?? {},
+      completedQuizzes: r.completed_quizzes ?? {},
+      examScore: r.exam_score ?? null,
+      userNotes: r.user_notes ?? {},
+      bookmarks: r.bookmarks ?? {},
+      studyDays: r.study_days ?? [],
+    });
+    const xp = computeXp(state);
+    return {
+      userId: r.id,
+      name: r.name,
+      avatar: r.avatar ?? undefined,
+      xp,
+      level: levelFromXp(xp),
+      isPro: r.is_pro,
+      completedLessons: state.completedLessonsCount,
+      streak: state.streak,
+    };
+  });
+
+  return entries
+    .sort((a, b) => b.xp - a.xp || a.name.localeCompare(b.name))
+    .slice(0, Math.max(1, Math.min(limit, 200)));
+}
+
 export async function saveUserProgress(
   userId: string,
   progressData: Partial<Omit<DbUserProgress, 'userId' | 'updatedAt'>>
@@ -587,4 +722,54 @@ export async function updateUserProStatusByEmail(
     RETURNING *
   `) as unknown as UserRow[];
   return rows.length ? rowToUser(rows[0]) : null;
+}
+
+// ── Certificates (Open Badge credentials) ──
+export async function getCertificateById(id: string): Promise<DbCertificate | null> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = (await sql`SELECT * FROM certificates WHERE id = ${id} LIMIT 1`) as unknown as CertificateRow[];
+  return rows.length ? rowToCertificate(rows[0]) : null;
+}
+
+export async function getCertificateByUserId(userId: string): Promise<DbCertificate | null> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = (await sql`SELECT * FROM certificates WHERE user_id = ${userId} LIMIT 1`) as unknown as CertificateRow[];
+  return rows.length ? rowToCertificate(rows[0]) : null;
+}
+
+// Idempotent: a user has at most one certificate. Re-issuing returns the
+// existing credential rather than minting a duplicate.
+export async function createCertificate(params: {
+  userId: string;
+  recipientName: string;
+  recipientEmail?: string | null;
+  score: number;
+}): Promise<DbCertificate> {
+  await ensureSchema();
+  const existing = await getCertificateByUserId(params.userId);
+  if (existing) return existing;
+
+  const sql = getSql();
+  const id = crypto.randomBytes(16).toString('hex');
+  const issuedAt = new Date().toISOString();
+  const signature = computeCertificateSignature({
+    id,
+    recipientName: params.recipientName,
+    score: params.score,
+    issuedAt,
+  });
+
+  const rows = (await sql`
+    INSERT INTO certificates (id, user_id, recipient_name, recipient_email, score, issued_at, signature)
+    VALUES (${id}, ${params.userId}, ${params.recipientName}, ${params.recipientEmail ?? null}, ${params.score}, ${issuedAt}, ${signature})
+    ON CONFLICT (user_id) DO NOTHING
+    RETURNING *
+  `) as unknown as CertificateRow[];
+
+  if (rows.length) return rowToCertificate(rows[0]);
+  const raced = await getCertificateByUserId(params.userId);
+  if (raced) return raced;
+  throw new Error('Failed to create certificate');
 }

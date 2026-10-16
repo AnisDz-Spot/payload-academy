@@ -1,0 +1,26 @@
+<svg width="760" height="200" viewBox="0 0 760 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Payload Academy">
+  <defs>
+    <linearGradient id="paGradient" x1="53" y1="53" x2="459" y2="459" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FB923C"/>
+      <stop offset="0.55" stop-color="#F97316"/>
+      <stop offset="1" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="paSheen" x1="53" y1="53" x2="300" y2="459" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="0.60" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(4 4) scale(0.375)">
+    <rect x="32" y="32" width="448" height="448" rx="116" fill="url(#paGradient)"/>
+    <rect x="32" y="32" width="448" height="448" rx="116" fill="url(#paSheen)"/>
+    <g transform="translate(-28 -12)">
+      <path d="M176 404 V132 H306 a86 86 0 0 1 0 172 H176"
+            stroke="#FFFFFF" stroke-width="60" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+  </g>
+
+  <text x="224" y="122"
+        font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="58" font-weight="800" letter-spacing="-1.5" fill="#0F172A">Payload <tspan fill="#EA580C">Academy</tspan></text>
+</svg>

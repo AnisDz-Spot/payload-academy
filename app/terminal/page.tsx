@@ -265,6 +265,9 @@ Next steps:
           <h1>Payload 3.x CLI &amp; Terminal Workbench</h1>
           <p className="lead">
             Practice running migrations, generating TypeScript types, executing seed scripts, and background worker queues in an interactive shell.
+            <span style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--muted)' }}>
+              🧪 Simulated environment — commands run against a mock, in-browser shell. No real filesystem, network, or Payload project is touched.
+            </span>
           </p>
 
           <div className="standalone-grid" style={{ gridTemplateColumns: '1fr 340px', gap: 20 }}>

@@ -25,7 +25,7 @@ export const QuizCard: React.FC<{ quiz: Quiz; lessonId: string }> = ({ quiz, les
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <h3 style={{ margin: 0 }}>🧠 Quick check: {quiz.question}</h3>
         {isAlreadyPassed && (
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)', background: 'rgba(22, 163, 74, 0.12)', padding: '2px 8px', borderRadius: 9999, border: '1px solid rgba(22, 163, 74, 0.25)' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)', background: 'rgba(22, 163, 74, 0.12)', padding: '10px', borderRadius: 9999, border: '1px solid rgba(22, 163, 74, 0.25)', minWidth: 'fit-content' }}>
             ✓ Quiz Passed
           </span>
         )}

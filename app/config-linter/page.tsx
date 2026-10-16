@@ -1,16 +1,14 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
+import type { ConfigLintResult } from '@/lib/configLinter';
 
-interface LintIssue {
-  id: string;
-  type: 'error' | 'warning' | 'info';
-  title: string;
-  message: string;
-  recommendation: string;
-  docLink?: string;
-}
+const SEVERITY = {
+  error: { color: '#ef4444', label: 'Error', icon: '🚨' },
+  warning: { color: '#f59e0b', label: 'Warning', icon: '⚠️' },
+  info: { color: '#3b82f6', label: 'Info', icon: 'ℹ️' },
+} as const;
 
 const SAMPLE_CONFIGS: Record<string, string> = {
   vulnerable: `import { buildConfig } from 'payload'
@@ -73,6 +71,12 @@ export default buildConfig({
     },
     {
       slug: 'media',
+      access: {
+        read: () => true,
+        create: ({ req: { user } }) => Boolean(user),
+        update: ({ req: { user } }) => Boolean(user),
+        delete: ({ req: { user } }) => user?.role === 'admin',
+      },
       upload: {
         staticDir: 'media',
         mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
@@ -97,88 +101,68 @@ export default buildConfig({
 export default function ConfigLinterPage() {
   const { toggleTheme } = useAcademy();
   const [code, setCode] = useState(SAMPLE_CONFIGS.vulnerable);
+  const [result, setResult] = useState<(ConfigLintResult & { forCode: string }) | null>(null);
 
-  // Run Static Code Analysis
-  const analyzeConfig = (source: string): { score: number; issues: LintIssue[] } => {
-    const issues: LintIssue[] = [];
-    let score = 100;
+  // Debounced AST linting against the server-side analyzer.
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/config-lint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (controller.signal.aborted) return;
+        if (!res.ok) {
+          setResult({
+            score: 0,
+            issues: [
+              {
+                id: 'lint-unavailable',
+                type: 'error',
+                title: 'Linter Unavailable',
+                message: data?.error || 'The linting service could not be reached.',
+                recommendation: 'Wait a moment and try again.',
+              },
+            ],
+            syntaxErrors: [],
+            forCode: code,
+          });
+          return;
+        }
+        setResult({ ...(data as ConfigLintResult), forCode: code });
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setResult({
+          score: 0,
+          issues: [
+            {
+              id: 'lint-error',
+              type: 'error',
+              title: 'Linter Unavailable',
+              message: err instanceof Error ? err.message : 'Network error.',
+              recommendation: 'Check your connection and try again.',
+            },
+          ],
+          syntaxErrors: [],
+          forCode: code,
+        });
+      }
+    }, 400);
 
-    // 1. Secret analysis
-    if (source.includes("secret: '") || source.includes('secret: "')) {
-      issues.push({
-        id: 'sec-hardcoded-secret',
-        type: 'error',
-        title: 'Hardcoded Cryptographic Secret',
-        message: 'PAYLOAD_SECRET is hardcoded as a string literal instead of using an environment variable.',
-        recommendation: "Use `secret: process.env.PAYLOAD_SECRET || ''` and generate a 32+ byte hex key using `openssl rand -hex 32`.",
-      });
-      score -= 25;
-    }
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [code]);
 
-    // 2. CORS Wildcard
-    if (source.includes("cors: ['*']") || source.includes('cors: ["*"]')) {
-      issues.push({
-        id: 'sec-wildcard-cors',
-        type: 'error',
-        title: 'Insecure Wildcard CORS Configuration',
-        message: 'Wildcard CORS (*) allows any third-party domain to make credentialed requests to your API.',
-        recommendation: 'Explicitly whitelist your production domains (e.g. `https://mywebsite.com`).',
-      });
-      score -= 20;
-    }
-
-    // 3. CSRF Wildcard
-    if (source.includes("csrf: ['*']") || source.includes('csrf: ["*"]')) {
-      issues.push({
-        id: 'sec-wildcard-csrf',
-        type: 'error',
-        title: 'Insecure CSRF Origin Whitelist',
-        message: 'Wildcard CSRF (*) disables cross-site request forgery protection.',
-        recommendation: 'Specify exact allowed frontend origins.',
-      });
-      score -= 15;
-    }
-
-    // 4. Slugs without unique & index
-    if (source.includes("name: 'slug'") && (!source.includes('unique: true') || !source.includes('index: true'))) {
-      issues.push({
-        id: 'perf-unindexed-slug',
-        type: 'warning',
-        title: 'Unindexed Slug Field',
-        message: 'URL slug field is missing `unique: true` and `index: true`. This causes slow sequential table scans in database queries.',
-        recommendation: "Add `{ name: 'slug', type: 'text', unique: true, index: true }`.",
-      });
-      score -= 15;
-    }
-
-    // 5. Upload collection without MIME types
-    if (source.includes('upload:') && !source.includes('mimeTypes:')) {
-      issues.push({
-        id: 'sec-unrestricted-upload',
-        type: 'warning',
-        title: 'Unrestricted File Upload MIME Types',
-        message: 'Upload collection has no MIME type restrictions, which may allow attackers to upload executable scripts (e.g. .html, .svg with XSS).',
-        recommendation: "Define allowed file types: `mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']`.",
-      });
-      score -= 15;
-    }
-
-    // 6. Missing useAsTitle
-    if (source.includes("slug: 'posts'") && !source.includes('useAsTitle:')) {
-      issues.push({
-        id: 'ux-missing-title',
-        type: 'info',
-        title: 'Missing admin.useAsTitle Property',
-        message: 'Collection lists and relationship pickers will display raw document IDs instead of human-readable titles.',
-        recommendation: "Add `admin: { useAsTitle: 'title' }` to your collection config.",
-      });
-      score -= 10;
-    }
-
-    return { score: Math.max(10, score), issues };
-  };
-
-  const { score, issues } = analyzeConfig(code);
+  const analyzing = !result || result.forCode !== code;
+  const score = result?.score ?? 0;
+  const issues = result?.issues ?? [];
+  const syntaxErrors = result?.syntaxErrors ?? [];
 
   const getScoreColor = (s: number) => {
     if (s >= 85) return '#10b981';
@@ -217,6 +201,9 @@ export default function ConfigLinterPage() {
           <h1>Payload 3.x Production Config Linter</h1>
           <p className="lead">
             Audit your <code>payload.config.ts</code> and collection schemas for security vulnerabilities, index bottlenecks, and enterprise best practices.
+            <span style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--muted)' }}>
+              🔬 Real static AST analysis across a curated rule set — catches common issues, but is not a substitute for a professional security audit.
+            </span>
           </p>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center' }}>
@@ -271,11 +258,13 @@ export default function ConfigLinterPage() {
                 <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '0.05em' }}>
                   Enterprise Production Readiness Score
                 </div>
-                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: getScoreColor(score), margin: '8px 0' }}>
-                  {score} / 100
+                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: analyzing ? 'var(--muted)' : getScoreColor(score), margin: '8px 0' }}>
+                  {analyzing ? '···' : `${score} / 100`}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  {score >= 90
+                  {analyzing
+                    ? 'Analyzing configuration…'
+                    : score >= 90
                     ? '🌟 Excellent! Your configuration adheres to high-security production standards.'
                     : score >= 60
                     ? '⚠️ Moderate risk. Resolve the flagged security issues before deploying.'
@@ -287,46 +276,70 @@ export default function ConfigLinterPage() {
               <div className="panel-card" style={{ flex: 1 }}>
                 <h3 style={{ margin: '0 0 16px 0', fontSize: '1.05rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Diagnostic Findings</span>
-                  <span className="lesson-meta-chip">{issues.length} Issues Found</span>
+                  <span className="lesson-meta-chip">
+                    {analyzing ? 'Analyzing…' : `${issues.length} Issues Found`}
+                  </span>
                 </h3>
 
-                {issues.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: 36, color: '#10b981' }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                    <div style={{ fontWeight: 700, fontSize: 16 }}>Zero Security Issues Detected!</div>
-                    <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
-                      Your configuration meets all analyzed performance, index, and security checks.
-                    </p>
+                {analyzing ? (
+                  <div style={{ textAlign: 'center', padding: 36, color: 'var(--muted)' }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>🔎</div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Analyzing configuration…</div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {issues.map((issue) => (
-                      <div
-                        key={issue.id}
-                        style={{
-                          background: 'var(--bg)',
-                          border: `1px solid ${issue.type === 'error' ? '#ef444466' : '#f59e0b66'}`,
-                          borderLeft: `4px solid ${issue.type === 'error' ? '#ef4444' : '#f59e0b'}`,
-                          borderRadius: 6,
-                          padding: 14,
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                          <strong style={{ fontSize: 14, color: issue.type === 'error' ? '#ef4444' : '#f59e0b' }}>
-                            {issue.type === 'error' ? '🚨 Error: ' : '⚠️ Warning: '}
-                            {issue.title}
-                          </strong>
-                          <span className="status-badge in-progress" style={{ fontSize: 10 }}>
-                            {issue.type}
-                          </span>
-                        </div>
-                        <p style={{ fontSize: 13, margin: '6px 0', color: 'var(--text)' }}>{issue.message}</p>
-                        <div style={{ background: 'var(--card)', padding: '8px 10px', borderRadius: 4, fontSize: 12, marginTop: 8 }}>
-                          <b>💡 Recommended Fix:</b> {issue.recommendation}
-                        </div>
+                  <>
+                    {syntaxErrors.length > 0 && (
+                      <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444466', borderRadius: 6, padding: 12, marginBottom: 12 }}>
+                        <strong style={{ fontSize: 13, color: '#ef4444' }}>⛔ TypeScript syntax errors detected:</strong>
+                        <ul style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--text)' }}>
+                          {syntaxErrors.map((e, i) => (
+                            <li key={i}>{e}</li>
+                          ))}
+                        </ul>
                       </div>
-                    ))}
-                  </div>
+                    )}
+
+                    {issues.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: 36, color: '#10b981' }}>
+                        <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                        <div style={{ fontWeight: 700, fontSize: 16 }}>Zero Security Issues Detected!</div>
+                        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
+                          Your configuration meets all analyzed performance, index, and security checks.
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {issues.map((issue) => {
+                          const sev = SEVERITY[issue.type];
+                          return (
+                            <div
+                              key={issue.id}
+                              style={{
+                                background: 'var(--bg)',
+                                border: `1px solid ${sev.color}66`,
+                                borderLeft: `4px solid ${sev.color}`,
+                                borderRadius: 6,
+                                padding: 14,
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <strong style={{ fontSize: 14, color: sev.color }}>
+                                  {sev.icon} {sev.label}: {issue.title}
+                                </strong>
+                                {issue.location && (
+                                  <span className="lesson-meta-chip" style={{ fontSize: 10 }}>{issue.location}</span>
+                                )}
+                              </div>
+                              <p style={{ fontSize: 13, margin: '6px 0', color: 'var(--text)' }}>{issue.message}</p>
+                              <div style={{ background: 'var(--card)', padding: '8px 10px', borderRadius: 4, fontSize: 12, marginTop: 8 }}>
+                                <b>💡 Recommended Fix:</b> {issue.recommendation}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

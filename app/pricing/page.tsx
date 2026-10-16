@@ -1,8 +1,9 @@
 'use client'
 import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAcademy } from '@/context/AcademyContext';
-import { PLANS, PAYMENT_METHODS, type PlanId } from '@/data/plans';
+import { PLANS, type PlanId } from '@/data/plans';
 import { CardContainer, CardBody, CardItem } from '@/components/ui/3d-card';
 import { Spotlight } from '@/components/ui/spotlight';
 import { FlipWords } from '@/components/ui/flip-words';
@@ -13,14 +14,15 @@ const STRIPE_CONFIGURED =
   !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_test_REPLACE');
 
 export default function PricingPage() {
-  const { toggleTheme, theme } = useAcademy();
+  const { toggleTheme } = useAcademy();
+  const router = useRouter();
   const [billingMode, setBillingMode] = useState<'monthly' | 'annual' | 'lifetime'>('annual');
   const [loading, setLoading] = useState<PlanId | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleCheckout = useCallback(async (planId: PlanId) => {
     if (planId === 'free') {
-      window.location.href = '/';
+      router.push('/');
       return;
     }
 
@@ -48,12 +50,7 @@ export default function PricingPage() {
     } finally {
       setLoading(null);
     }
-  }, []);
-
-  // Map billing mode to visible plans
-  const visiblePlans = billingMode === 'lifetime'
-    ? PLANS.filter(p => p.id === 'free' || p.id === 'lifetime')
-    : PLANS.filter(p => p.id === 'free' || p.id === billingMode);
+  }, [router]);
 
   const allPlans = PLANS;
 
@@ -475,7 +472,7 @@ function ComparisonTable() {
     { label: 'Schema Builder & Query Simulator', values: ['✓', '✓', '✓', '✓'] },
     { label: 'Visual RBAC Matrix & RLS Simulator', values: ['–', '✓', '✓', '✓'] },
     { label: 'Lexical AST Inspector', values: ['–', '✓', '✓', '✓'] },
-    { label: 'Live Preview postMessage Studio', values: ['–', '✓', '✓', '✓'] },
+    { label: 'Live Preview Simulator', values: ['–', '✓', '✓', '✓'] },
     { label: 'Drizzle SQL Visualizer', values: ['–', '✓', '✓', '✓'] },
     { label: 'AI Payload Assistant (✨)', values: ['–', '✓', '✓', '✓'] },
     { label: 'Final Exam', values: ['–', '✓', '✓', '✓'] },

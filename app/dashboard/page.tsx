@@ -18,7 +18,6 @@ export default function DashboardPage() {
     canClaimCertificate,
     isAdmin,
     bookmarks,
-    userNotes,
     streak,
     studyDays,
     toggleTheme,
@@ -45,7 +44,6 @@ export default function DashboardPage() {
 
   const totalCompleted = Object.keys(completedLessons).length;
   const progressPercent = Math.round((totalCompleted / LESSONS.length) * 100);
-  const notesCount = Object.keys(userNotes).filter(k => userNotes[k]?.trim()).length;
   const bookmarksList = useMemo(() => {
     return LESSONS.filter(l => bookmarks[l.id]);
   }, [bookmarks]);
@@ -325,20 +323,33 @@ export default function DashboardPage() {
           <div className="dash-section-card" style={{ marginTop: 28 }}>
             <h2 className="dash-section-title">⚡ Interactive Developer Workbench</h2>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-              Specialized visual studios designed for real-time Payload CMS architecture and debugging.
+              Specialized interactive studios for exploring Payload CMS architecture and debugging.
             </div>
 
             <BentoGrid className="max-w-full">
               <Link href="/live-preview-simulator" style={{ textDecoration: 'none' }} className="md:col-span-2">
                 <BentoGridItem
-                  title="Live Preview Studio & Bus"
-                  description="Split-screen studio with live postMessage bus, multi-device viewports & zero-reload sync."
+                  title="Live Preview Simulator"
+                  description="Split-screen simulator of the postMessage preview flow with multi-device viewports."
                   header={
                     <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20 p-4 items-center justify-center">
                       <span className="text-4xl">🖥️</span>
                     </div>
                   }
-                  icon={<span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 font-bold">LIVE SYNC</span>}
+                  icon={<span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 font-bold">PREVIEW SIM</span>}
+                />
+              </Link>
+
+              <Link href="/leaderboard" style={{ textDecoration: 'none' }}>
+                <BentoGridItem
+                  title="XP Leaderboard"
+                  description="See where you rank against other learners by total XP, lessons completed and streaks."
+                  header={
+                    <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-4 items-center justify-center">
+                      <span className="text-4xl">🏆</span>
+                    </div>
+                  }
+                  icon={<span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">RANKED</span>}
                 />
               </Link>
 
@@ -371,7 +382,7 @@ export default function DashboardPage() {
               <Link href="/schema-builder" style={{ textDecoration: 'none' }}>
                 <BentoGridItem
                   title="Visual Schema Studio"
-                  description="Design Collections, generate types & preview Admin UI in real-time."
+                  description="Design Collections, generate types & preview the Admin UI instantly."
                   header={
                     <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 p-4 items-center justify-center">
                       <span className="text-4xl">⚙️</span>

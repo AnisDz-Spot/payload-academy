@@ -21,13 +21,51 @@ export default function CertificatePage() {
   } = useAcademy();
 
   const [userName, setUserName] = useState('Payload Master Engineer');
+  const [certId, setCertId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const issuedRef = useRef(false);
 
   const completedLessonsCount = Object.keys(completedLessons).length;
   const completedQuizzesCount = Object.keys(completedQuizzes).length;
   const totalLessons = LESSONS.length;
 
   const displayScore = examScore !== null ? examScore : (isAdmin ? 100 : 80);
+
+  // Deterministic preview ID shown when the credential has not been issued by
+  // the server (guest / not-yet-claimed). A real, signed ID replaces it once
+  // /api/certificate/issue succeeds.
+  const previewCertId =
+    'PA-3X-' +
+    Math.abs(
+      (userName || 'Payload Master Engineer').split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)
+    )
+      .toString(16)
+      .toUpperCase()
+      .padStart(8, '0');
+  const effectiveCertId = certId || previewCertId;
+
+  useEffect(() => {
+    if (!canClaimCertificate || issuedRef.current) return;
+    issuedRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/certificate/issue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: userName }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data?.id) setCertId(data.id as string);
+      } catch {
+        // Stay in preview mode; the canvas still renders an unverified preview.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canClaimCertificate, userName]);
 
   // ── Canvas Drawing with Official Signature (Unconditional Hook) ───
   useEffect(() => {
@@ -114,7 +152,7 @@ export default function CertificatePage() {
       ctx.fillStyle = '#e2e8f0';
       ctx.font = 'bold 15px "Inter", sans-serif';
       ctx.fillText(
-        'Collections & Schemas · Row-Level Access Control · Next.js 15 Server Actions · Lexical Rich Text',
+        'Collections & Schemas · Row-Level Access Control · Next.js 16 Server Actions · Lexical Rich Text',
         w / 2,
         425
       );
@@ -154,24 +192,17 @@ export default function CertificatePage() {
         month: 'long',
         day: 'numeric',
       });
-      const certId =
-        'PA-3X-' +
-        Math.abs(
-          name.split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)
-        )
-          .toString(16)
-          .toUpperCase()
-          .padStart(8, '0');
+      const shownCertId = effectiveCertId;
 
       ctx.fillStyle = '#64748b';
       ctx.font = '12px "JetBrains Mono", monospace';
       ctx.textAlign = 'left';
       ctx.fillText('ISSUE DATE: ' + dateStr, 70, h - 70);
-      ctx.fillText('VERIFICATION ID: ' + certId, 70, h - 50);
+      ctx.fillText('VERIFICATION ID: ' + shownCertId, 70, h - 50);
 
       ctx.textAlign = 'right';
       ctx.fillText(`MASTER SCORE: ${displayScore}% · HONORS`, w - 70, h - 70);
-      ctx.fillText('VERIFIED AUTHENTIC CREDENTIAL ✓', w - 70, h - 50);
+      ctx.fillText(certId ? 'VERIFIED AUTHENTIC CREDENTIAL ✓' : 'PREVIEW · CLAIM TO VERIFY', w - 70, h - 50);
     };
 
     // Load signature image from /signature.png
@@ -185,7 +216,7 @@ export default function CertificatePage() {
     };
 
     drawCertificate();
-  }, [userName, examScore, displayScore, isAdmin, canClaimCertificate]);
+  }, [userName, examScore, displayScore, isAdmin, canClaimCertificate, certId, effectiveCertId]);
 
   const handleDownload = () => {
     if (!canvasRef.current || !canClaimCertificate) return;
@@ -357,20 +388,11 @@ export default function CertificatePage() {
 
           {/* Social Share & Verification Row */}
           {(() => {
-            const certId =
-              'PA-3X-' +
-              Math.abs(
-                (userName || 'Payload Master Engineer').split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)
-              )
-                .toString(16)
-                .toUpperCase()
-                .padStart(8, '0');
-
             const verifyUrl = typeof window !== 'undefined'
-              ? `${window.location.origin}/verify/${certId}`
-              : `https://payload-academy.dev/verify/${certId}`;
+              ? `${window.location.origin}/verify/${effectiveCertId}`
+              : `https://payload-academy.dev/verify/${effectiveCertId}`;
 
-            const linkedInUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=Payload+CMS+3.x+Certified+Master+Engineer&organizationName=Payload+CMS&issueYear=2026&certUrl=${encodeURIComponent(verifyUrl)}&certId=${encodeURIComponent(certId)}`;
+            const linkedInUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=Payload+CMS+3.x+Certified+Master+Engineer&organizationName=Payload+CMS&issueYear=2026&certUrl=${encodeURIComponent(verifyUrl)}&certId=${encodeURIComponent(effectiveCertId)}`;
 
             const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just became an officially certified Payload CMS 3.x Master Engineer with a score of ${displayScore}%! 🏆 Verified Credential: ${verifyUrl}`)}`;
 
@@ -378,8 +400,15 @@ export default function CertificatePage() {
               <div className="mt-8 p-6 rounded-2xl bg-white/5 border border-white/10 text-center space-y-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-left">
-                    <div className="text-xs font-mono font-bold text-orange-400">CREDENTIAL ID: {certId}</div>
+                    <div className="text-xs font-mono font-bold text-orange-400">
+                      CREDENTIAL ID: {effectiveCertId} {certId ? '' : '· PREVIEW'}
+                    </div>
                     <div className="text-sm font-bold text-white mt-0.5">Share Your Certified Achievement</div>
+                    <div className="text-[11px] text-gray-400 mt-1">
+                      {certId
+                        ? 'This credential is signed and stored in the public registry.'
+                        : 'Sign in with a Pro account to claim a signed, publicly verifiable credential.'}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3">
@@ -402,14 +431,25 @@ export default function CertificatePage() {
                     </a>
 
                     <Link
-                      href={`/verify/${certId}`}
+                      href={`/verify/${effectiveCertId}`}
                       className="px-4 py-2 rounded-xl font-bold text-xs text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 transition duration-150 flex items-center gap-2"
                     >
                       <span>🔍</span> Public Registry →
                     </Link>
 
+                    {certId && (
+                      <a
+                        href={`/api/badges/${certId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-xl font-bold text-xs text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/25 transition duration-150 flex items-center gap-2"
+                      >
+                        <span>🏅</span> Open Badge JSON ↗
+                      </a>
+                    )}
+
                     <a
-                      href={`/api/og/certificate?id=${encodeURIComponent(certId)}&name=${encodeURIComponent(userName || 'Payload Master Engineer')}&score=${displayScore}`}
+                      href={`/api/og/certificate?id=${encodeURIComponent(effectiveCertId)}&name=${encodeURIComponent(userName || 'Payload Master Engineer')}&score=${displayScore}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 rounded-xl font-bold text-xs text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/25 transition duration-150 flex items-center gap-2"

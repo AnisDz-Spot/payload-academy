@@ -13,6 +13,7 @@ export interface Lesson {
   readingMins?: number;
   relatedIds?: string[];  // IDs of related lessons
   tags?: string[];        // Topic tags e.g. ['hooks', 'auth']
+  verified?: string;      // Payload version this lesson was last checked against
 }
 
 export interface Quiz {

@@ -69,7 +69,7 @@ export const AiAssistantModal: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: '👋 Hi! I am your **Payload 3.x AI Assistant**. Ask me anything about schemas, hooks, Next.js 15 Server Actions, database adapters, or access control!',
+      content: '👋 Hi! I am your **Payload 3.x AI Assistant**. Ask me anything about schemas, hooks, Next.js 16 Server Actions, database adapters, or access control!',
     }
   ]);
   const [input, setInput] = useState('');
@@ -147,7 +147,7 @@ export const AiAssistantModal: React.FC = () => {
                   <span className="ai-provider-dot" /> {provider}
                 </span>
               </div>
-              <div className="modal-sub">Ask questions, generate schema code &amp; troubleshoot Next.js 15</div>
+              <div className="modal-sub">Ask questions, generate schema code &amp; troubleshoot Next.js 16</div>
             </div>
           </div>
           <button className="modal-close" onClick={() => setActiveModal('none')}>✕</button>

@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 export const SparklesCore = ({
-  id,
   className = '',
   background = 'transparent',
   minSize = 1,
@@ -12,7 +11,6 @@ export const SparklesCore = ({
   particleDensity = 60,
   particleColor = '#f97316',
 }: {
-  id?: string;
   className?: string;
   background?: string;
   minSize?: number;
@@ -39,6 +37,7 @@ export const SparklesCore = ({
       duration: Math.random() * 3 + 2,
       delay: Math.random() * 2,
     }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- randomized particle field regenerated when sizing props change
     setParticles(generated);
   }, [maxSize, minSize, particleDensity]);
 

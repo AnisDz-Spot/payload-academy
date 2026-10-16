@@ -171,7 +171,7 @@ const canReadPublishedOrOwn: Access = ({ req: { user } }) => {
                 <tbody>
                   <tr><td><code>equals</code> / <code>not_equals</code></td><td><code>=</code> / <code>!=</code></td><td><code>{"{ status: { equals: 'published' } }"}</code></td></tr>
                   <tr><td><code>in</code> / <code>not_in</code></td><td><code>IN (...)</code></td><td><code>{"{ category: { in: ['tech', 'news'] } }"}</code></td></tr>
-                  <tr><td><code>like</code> / <code>contains</code></td><td><code>ILIKE '%val%'</code></td><td><code>{"{ title: { like: 'payload' } }"}</code> (Case-insensitive)</td></tr>
+                  <tr><td><code>like</code> / <code>contains</code></td><td><code>ILIKE &apos;%val%&apos;</code></td><td><code>{"{ title: { like: 'payload' } }"}</code> (Case-insensitive)</td></tr>
                   <tr><td><code>greater_than</code> / <code>less_than</code></td><td><code>&gt;</code> / <code>&lt;</code></td><td><code>{"{ price: { greater_than: 100 } }"}</code></td></tr>
                   <tr><td><code>exists</code></td><td><code>IS NOT NULL</code></td><td><code>{"{ publishedAt: { exists: true } }"}</code></td></tr>
                 </tbody>

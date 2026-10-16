@@ -11,9 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const stripe = new Stripe(key, {
-      apiVersion: '2026-09-30.endive' as any,
-    });
+    const stripe = new Stripe(key);
 
     const body = await req.json().catch(() => ({}));
     const customerId = body.customerId;
@@ -38,10 +36,11 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ url: portalSession.url });
-  } catch (err: any) {
+  } catch (err) {
     console.error('Stripe Portal error:', err);
+    const message = err instanceof Error ? err.message : 'Failed to create billing portal session';
     return NextResponse.json(
-      { error: err.message || 'Failed to create billing portal session' },
+      { error: message },
       { status: 500 }
     );
   }

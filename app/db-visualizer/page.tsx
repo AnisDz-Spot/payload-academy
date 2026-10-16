@@ -2,6 +2,25 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
+import type { SchemaTable } from '@/lib/schemaParser';
+
+const SAMPLE_CONFIG = `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: { useAsTitle: 'title' },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'slug', type: 'text', required: true, unique: true, index: true },
+    { name: 'excerpt', type: 'textarea' },
+    { name: 'content', type: 'richText' },
+    { name: 'publishedAt', type: 'date' },
+    { name: 'featured', type: 'checkbox' },
+    { name: 'author', type: 'relationship', relationTo: 'users', required: true },
+    { name: 'coverImage', type: 'upload', relationTo: 'media' },
+    { name: 'tags', type: 'relationship', relationTo: 'tags', hasMany: true },
+  ],
+}`;
 
 interface ColumnDef {
   name: string;
@@ -74,11 +93,63 @@ const SCHEMAS: Record<string, TableSchema> = {
 
 export default function DbVisualizerPage() {
   const { toggleTheme } = useAcademy();
+  const [schemas, setSchemas] = useState<Record<string, TableSchema>>(SCHEMAS);
   const [selectedKey, setSelectedKey] = useState<string>('posts');
   const [viewTab, setViewTab] = useState<'table' | 'drizzle' | 'sql' | 'migration'>('table');
   const [copied, setCopied] = useState(false);
 
-  const currentSchema = SCHEMAS[selectedKey] || SCHEMAS.posts;
+  const [analysisSource, setAnalysisSource] = useState(SAMPLE_CONFIG);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [parseWarnings, setParseWarnings] = useState<string[]>([]);
+  const [parsedFromConfig, setParsedFromConfig] = useState(false);
+
+  const currentSchema = schemas[selectedKey] || Object.values(schemas)[0];
+
+  const handleAnalyze = async () => {
+    setAnalyzing(true);
+    setParseError(null);
+    setParseWarnings([]);
+    try {
+      const res = await fetch('/api/db-schema', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: analysisSource }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setParseError(typeof data.error === 'string' ? data.error : 'Schema parsing failed.');
+        return;
+      }
+      if (Array.isArray(data.syntaxErrors) && data.syntaxErrors.length) {
+        setParseWarnings(data.syntaxErrors as string[]);
+      }
+      if (data.error) {
+        setParseError(data.error as string);
+        return;
+      }
+      const tables = data.tables as SchemaTable[];
+      const next: Record<string, TableSchema> = {};
+      for (const t of tables) next[t.tableName] = t;
+      if (Object.keys(next).length) {
+        setSchemas(next);
+        setSelectedKey(tables[0].tableName);
+        setParsedFromConfig(true);
+      }
+    } catch {
+      setParseError('Network error while parsing the config.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const resetToSamples = () => {
+    setSchemas(SCHEMAS);
+    setSelectedKey('posts');
+    setParsedFromConfig(false);
+    setParseError(null);
+    setParseWarnings([]);
+  };
 
   // Generate Drizzle ORM TypeScript
   let drizzleCode = `import { pgTable, serial, varchar, text, integer, jsonb, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core'\nimport { relations } from 'drizzle-orm'\n\n`;
@@ -172,29 +243,64 @@ export default function DbVisualizerPage() {
           <h1>Payload 3.x to Drizzle ORM &amp; PostgreSQL Visualizer</h1>
           <p className="lead">
             Inspect how high-level Payload TypeScript Collection Schemas are compiled into strongly-typed Drizzle ORM tables, composite indices, foreign keys, and SQL DDL migrations.
+            <span style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--muted)' }}>
+              🔬 Paste your own Payload config below and the table mappings, indices, foreign keys and DDL are derived from your actual fields. The built-in samples are illustrative of Payload&apos;s Postgres adapter.
+            </span>
           </p>
 
-          {/* Collection Switcher */}
+          {/* Config Parser */}
+          <div className="panel-card" style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+              <div>
+                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase' }}>🔬 Parse a Payload Config</span>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
+                  Paste a collection config to derive its Drizzle table, indices, foreign keys and DDL from the actual fields.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="t" onClick={resetToSamples}>↺ Sample tables</button>
+                <button
+                  className="quick-mark-btn"
+                  onClick={handleAnalyze}
+                  disabled={analyzing}
+                  style={{ background: 'var(--accent)', color: '#fff', border: 'none', padding: '6px 14px', opacity: analyzing ? 0.6 : 1, cursor: analyzing ? 'wait' : 'pointer' }}
+                >
+                  {analyzing ? 'Analyzing…' : '⚡ Parse Config'}
+                </button>
+              </div>
+            </div>
+            <textarea
+              value={analysisSource}
+              onChange={(e) => setAnalysisSource(e.target.value)}
+              spellCheck={false}
+              className="sb-input"
+              style={{ width: '100%', minHeight: 150, fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.5, resize: 'vertical' }}
+            />
+            {parseWarnings.length > 0 && (
+              <div style={{ marginTop: 8, fontSize: 12, color: '#f59e0b' }}>
+                ⚠️ Syntax warnings: {parseWarnings.join('; ')}
+              </div>
+            )}
+            {parseError && (
+              <div style={{ marginTop: 8, fontSize: 12, color: '#ef4444' }}>⛔ {parseError}</div>
+            )}
+            {parsedFromConfig && (
+              <div style={{ marginTop: 8, fontSize: 12, color: '#10b981' }}>✅ Showing tables parsed from your config.</div>
+            )}
+          </div>
+
+          {/* Table Switcher */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>Select Table:</span>
-            <button
-              className={`t ${selectedKey === 'posts' ? 'active' : ''}`}
-              onClick={() => setSelectedKey('posts')}
-            >
-              📝 posts table
-            </button>
-            <button
-              className={`t ${selectedKey === 'products' ? 'active' : ''}`}
-              onClick={() => setSelectedKey('products')}
-            >
-              🛒 products table
-            </button>
-            <button
-              className={`t ${selectedKey === 'users' ? 'active' : ''}`}
-              onClick={() => setSelectedKey('users')}
-            >
-              👥 users (auth) table
-            </button>
+            {Object.keys(schemas).map((key) => (
+              <button
+                key={key}
+                className={`t ${selectedKey === key ? 'active' : ''}`}
+                onClick={() => setSelectedKey(key)}
+              >
+                🗄️ {schemas[key].tableName} table
+              </button>
+            ))}
           </div>
 
           <div className="panel-card" style={{ marginBottom: 24 }}>

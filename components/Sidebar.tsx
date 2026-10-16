@@ -128,6 +128,9 @@ export const Sidebar: React.FC = () => {
           <Link href="/dashboard" className="sidebar-tool-link">
             <span>📊</span> Dashboard
           </Link>
+          <Link href="/leaderboard" className="sidebar-tool-link">
+            <span>🏅</span> Leaderboard
+          </Link>
           <Link href="/pricing" className="sidebar-tool-link">
             <span>💳</span> Pricing
           </Link>
@@ -158,8 +161,14 @@ export const Sidebar: React.FC = () => {
           <Link href="/study-guide" className="sidebar-tool-link">
             <span>📖</span> Study Guide
           </Link>
+          <Link href="/lessons" className="sidebar-tool-link">
+            <span>🗂️</span> Lesson Library
+          </Link>
           <Link href="/glossary" className="sidebar-tool-link">
             <span>📚</span> Glossary
+          </Link>
+          <Link href="/flashcards" className="sidebar-tool-link">
+            <span>🃏</span> Flashcards
           </Link>
           <Link href="/final-exam" className="sidebar-tool-link">
             <span>🎓</span> Final Exam

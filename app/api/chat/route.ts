@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { retrieveLessons, buildRetrievalContext, type RetrievedLesson } from '@/lib/lessonRetrieval';
 
 const PAYLOAD_SYSTEM_PROMPT = `You are the official Payload 3.x Senior AI Architect and Instructor for Payload Academy.
 You specialize exclusively in:
-1. Payload CMS 3.x with Next.js 15 (App Router, React Server Components, Server Actions).
+1. Payload CMS 3.x with Next.js 16 (App Router, React Server Components, Server Actions).
 2. Database Adapters: Drizzle ORM (@payloadcms/db-postgres, @payloadcms/db-sqlite) and MongoDB (@payloadcms/db-mongodb).
 3. RichText: Lexical editor (@payloadcms/richtext-lexical) with custom blocks and headless AST output.
 4. Access Control: Collection and Field-level row filtering and boolean permissions.
@@ -21,6 +22,22 @@ export async function POST(req: NextRequest) {
 
     const latestMessage = messages[messages.length - 1]?.content || '';
 
+    // ── Retrieval-Augmented Generation ─────────────────────────────
+    // Ground the answer in the academy's own lesson content: find the most
+    // relevant lessons and inject them as context.
+    const hits = retrieveLessons(latestMessage, 4);
+    const context = buildRetrievalContext(hits);
+    const sources = hits.map((h) => ({ id: h.id, title: h.title, module: h.module }));
+    const groundedPrompt = context
+      ? `${PAYLOAD_SYSTEM_PROMPT}
+
+You have been given excerpts from the Payload Academy course that are most relevant to the question. Ground your answer in this material when it applies, and stay consistent with it. If the excerpts do not cover the question, answer from your own Payload 3.x expertise.
+
+--- COURSE MATERIAL START ---
+${context}
+--- COURSE MATERIAL END ---`
+      : PAYLOAD_SYSTEM_PROMPT;
+
     // Check for API Keys in environment variables
     const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
@@ -38,7 +55,7 @@ export async function POST(req: NextRequest) {
               contents: [
                 {
                   role: 'user',
-                  parts: [{ text: `${PAYLOAD_SYSTEM_PROMPT}\n\nUser Question:\n${latestMessage}` }],
+                  parts: [{ text: `${groundedPrompt}\n\nUser Question:\n${latestMessage}` }],
                 },
               ],
               generationConfig: {
@@ -53,7 +70,7 @@ export async function POST(req: NextRequest) {
           const data = await response.json();
           const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (text) {
-            return NextResponse.json({ reply: text, provider: 'gemini' });
+            return NextResponse.json({ reply: text, provider: 'gemini', sources });
           }
         }
       } catch (err) {
@@ -73,7 +90,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             model: 'gpt-4o-mini',
             messages: [
-              { role: 'system', content: PAYLOAD_SYSTEM_PROMPT },
+              { role: 'system', content: groundedPrompt },
               ...messages.map((m: { role: string; content: string }) => ({
                 role: m.role,
                 content: m.content,
@@ -88,7 +105,7 @@ export async function POST(req: NextRequest) {
           const data = await response.json();
           const text = data.choices?.[0]?.message?.content;
           if (text) {
-            return NextResponse.json({ reply: text, provider: 'openai' });
+            return NextResponse.json({ reply: text, provider: 'openai', sources });
           }
         }
       } catch (err) {
@@ -108,7 +125,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
             messages: [
-              { role: 'system', content: PAYLOAD_SYSTEM_PROMPT },
+              { role: 'system', content: groundedPrompt },
               ...messages,
             ],
             temperature: 0.3,
@@ -120,7 +137,7 @@ export async function POST(req: NextRequest) {
           const data = await response.json();
           const text = data.choices?.[0]?.message?.content;
           if (text) {
-            return NextResponse.json({ reply: text, provider: 'groq' });
+            return NextResponse.json({ reply: text, provider: 'groq', sources });
           }
         }
       } catch (err) {
@@ -129,8 +146,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 4. Intelligent Offline Knowledge Engine Fallback ──────────
-    const fallbackAnswer = generateOfflinePayloadAnswer(latestMessage);
-    return NextResponse.json({ reply: fallbackAnswer, provider: 'offline' });
+    const fallbackAnswer = generateOfflinePayloadAnswer(latestMessage, hits);
+    return NextResponse.json({ reply: fallbackAnswer, provider: 'offline', sources });
   } catch (error) {
     console.error('Chat API error:', error);
     return NextResponse.json(
@@ -140,7 +157,18 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function generateOfflinePayloadAnswer(query: string): string {
+// Wraps the curated offline answers and appends links to the lessons that were
+// retrieved for the query, so even the fallback is grounded in the course.
+function generateOfflinePayloadAnswer(query: string, hits: RetrievedLesson[]): string {
+  const base = buildOfflineBase(query);
+  if (!hits.length) return base;
+  const footer =
+    `\n\n---\n📚 **Relevant lessons in the course:**\n` +
+    hits.map((h) => `- **${h.title}** — _${h.module}_`).join('\n');
+  return base + footer;
+}
+
+function buildOfflineBase(query: string): string {
   const q = query.toLowerCase();
 
   if (q.includes('server component') || q.includes('getpayload') || q.includes('fetch') || q.includes('next.js') || q.includes('page.tsx')) {

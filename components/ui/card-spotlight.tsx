@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useMotionValue, motion, useMotionTemplate } from 'framer-motion';
 
 export const CardSpotlight = ({
@@ -16,8 +16,7 @@ export const CardSpotlight = ({
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
-  [key: string]: any;
-}) => {
+} & React.HTMLAttributes<HTMLDivElement>) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -31,14 +30,10 @@ export const CardSpotlight = ({
     mouseY.set(clientY - top);
   }
 
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
     <div
       className={`relative overflow-hidden group/spotlight rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 ${className}`}
       onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       style={style}
       {...props}
     >
@@ -63,8 +58,12 @@ export const CardSpotlight = ({
         }}
       >
         <div
-          className="absolute inset-0 bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-transparent"
-          style={{ mixBlendMode: 'screen' }}
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${color}, transparent 70%)`,
+            opacity: 0.18,
+            mixBlendMode: 'screen',
+          }}
         />
       </motion.div>
       <div className="relative z-10">{children}</div>

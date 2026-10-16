@@ -9,9 +9,8 @@ import { NotesDrawer } from './NotesDrawer';
 import { InteractiveChallenge } from './InteractiveChallenge';
 import { ProPaywallBanner } from './ProPaywallBanner';
 import { Spotlight } from '@/components/ui/spotlight';
-import { FlipWords } from '@/components/ui/flip-words';
+import { PAYLOAD_VERIFIED_VERSION } from '@/data/curriculum';
 
-const DOCS_BASE = 'https://payloadcms.com/docs/';
 const ROLE_LABELS: Record<string, string> = {
   all: 'Fullstack / All Roles',
   frontend: 'Frontend & UI',
@@ -163,6 +162,14 @@ export const LessonView: React.FC = () => {
                 {diff.label}
               </span>
             )}
+            {/* Freshness — the version this lesson was last verified against */}
+            <span
+              className="lesson-meta-chip"
+              title={`Last verified against Payload v${lesson.verified ?? PAYLOAD_VERIFIED_VERSION}`}
+              style={{ color: '#10b981', borderColor: '#10b981', background: '#10b98115' }}
+            >
+              🔒 v{lesson.verified ?? PAYLOAD_VERIFIED_VERSION}
+            </span>
             {/* Status */}
             {isDone ? (
               <span className="status-badge completed">✓ Completed</span>

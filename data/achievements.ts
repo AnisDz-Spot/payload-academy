@@ -101,7 +101,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'curriculum_complete',
     title: 'Curriculum Master',
-    description: 'Complete all 50 lessons across all 10 modules.',
+    description: 'Complete all 50 lessons across all 9 modules.',
     icon: '🎓',
     category: 'progress',
     rarity: 'epic',

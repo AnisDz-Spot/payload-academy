@@ -212,7 +212,7 @@ export const QUIZZES: Record<string, Quiz> = {
     "explanation": "Setting pagination: false skips the expensive totalDocs COUNT query."
   },
   "actions": {
-    "question": "How do Next.js 15 Server Actions interact with Payload?",
+    "question": "How do Next.js 16 Server Actions interact with Payload?",
     "options": [
       "Directly call getPayload({ config }) and Local API methods",
       "Make REST fetch calls to localhost",

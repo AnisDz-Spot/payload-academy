@@ -1,7 +1,8 @@
 'use client'
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
+import { matchesWhere } from '@/lib/queryEngine';
 
 type UserRole = 'admin' | 'editor' | 'author' | 'customer' | 'guest';
 type CrudAction = 'read' | 'create' | 'update' | 'delete' | 'admin';
@@ -222,120 +223,137 @@ export default function RbacMatrixPage() {
     reason: string;
     sqlQuery: string;
     fnCode: string;
+    returned: string;
     mockPayload: string;
   } | null>(null);
 
   const [copiedCode, setCopiedCode] = useState(false);
   const [activeTab, setActiveTab] = useState<'matrix' | 'tester' | 'snippets'>('matrix');
 
-  // Simulated request evaluation
+  // Build the mock document that the access function will be evaluated against,
+  // derived from the persona + document-state controls.
+  const buildTargetDoc = (): Record<string, unknown> => {
+    const ownerId = docOwnership === 'own' ? (selectedPersona.id || null) : 'user_other_999';
+    return {
+      id: docOwnership === 'own'
+        ? (selectedPersona.id ? `doc_owned_by_${selectedPersona.id}` : 'doc_public_99')
+        : 'doc_other_user_44',
+      status: docStatus,
+      _status: docStatus,
+      author: ownerId,
+      uploadedBy: ownerId,
+      customer: ownerId,
+      collection: selectedCollection.toLowerCase(),
+      title: `${selectedCollection} Sample Resource #101`,
+      updatedAt: new Date().toISOString(),
+    };
+  };
+
+  // Execute the real access-control function (authored in this file, never user
+  // input) with a mock session and return its raw result.
+  const evalAccess = (
+    fnCode: string,
+    user: Record<string, unknown> | null,
+  ): { ok: true; value: unknown } | { ok: false; error: string } => {
+    try {
+      const fn = new Function(`"use strict"; return (${fnCode});`)() as (args: {
+        req: { user: Record<string, unknown> | null };
+      }) => unknown;
+      return { ok: true, value: fn({ req: { user } }) };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'Evaluation failed' };
+    }
+  };
+
+  // Real request evaluation: the access function is executed against a mock
+  // session + target document, exactly as Payload would at runtime.
   const runSimulation = () => {
     const colConfig = MATRIX_COLLECTIONS.find(c => c.collection === selectedCollection);
     if (!colConfig) return;
 
     const rolePerm = colConfig.roles[selectedPersona.role][selectedAction];
+    const user = selectedPersona.role === 'guest' || !selectedPersona.id
+      ? null
+      : { id: selectedPersona.id, email: selectedPersona.email, roles: [selectedPersona.role] };
+    const targetDoc = buildTargetDoc();
+
     let granted = false;
     let reason = '';
     let statusCode = 200;
     let statusText = 'OK';
-    let sql = 'SELECT * FROM "' + selectedCollection.toLowerCase() + '"';
+    let returned = '';
 
-    if (rolePerm.allowed === true) {
-      granted = true;
+    const successCodes = () => {
       statusCode = selectedAction === 'create' ? 201 : (selectedAction === 'delete' ? 204 : 200);
       statusText = selectedAction === 'create' ? '201 Created' : (selectedAction === 'delete' ? '204 No Content' : '200 OK');
-      reason = `Role "${selectedPersona.role}" has unconditional full "${selectedAction}" permissions on ${selectedCollection}.`;
-      sql += '; -- Unrestricted query';
-    } else if (rolePerm.allowed === false) {
-      granted = false;
+    };
+    const denyCodes = () => {
       statusCode = selectedPersona.role === 'guest' ? 401 : 403;
-      statusText = selectedPersona.role === 'guest' ? '401 Unauthorized' : '403 Forbidden';
-      reason = `Access Denied: Role "${selectedPersona.role}" has no "${selectedAction}" permission on ${selectedCollection}.`;
-      sql = '-- Query not executed (Access Control returned false)';
-    } else {
-      // Conditional RLS
-      if (selectedCollection === 'Posts') {
-        if (selectedAction === 'read') {
-          if (docStatus === 'published' || docOwnership === 'own') {
-            granted = true;
-            statusCode = 200;
-            statusText = '200 OK';
-            reason = docStatus === 'published'
-              ? `Granted: Post is "published", readable by role "${selectedPersona.role}".`
-              : `Granted: Post is owned by active user (${selectedPersona.id}).`;
-          } else {
-            granted = false;
-            statusCode = 404; // Payload returns 404 for unreadable docs rather than leaking existence
-            statusText = '404 Not Found (RLS Filtered)';
-            reason = `Filtered Out: Post is "draft" and owned by another user.`;
-          }
-          sql += ` WHERE ("status" = 'published' OR "author_id" = '${selectedPersona.id || 'NULL'}');`;
-        } else if (selectedAction === 'update' || selectedAction === 'delete') {
-          if (docOwnership === 'own') {
-            if (selectedAction === 'delete' && docStatus === 'published' && selectedPersona.role === 'author') {
-              granted = false;
-              statusCode = 403;
-              statusText = '403 Forbidden';
-              reason = 'Authors cannot delete published posts (must be unpublished first).';
-              sql += ` WHERE "author_id" = '${selectedPersona.id}' AND "status" != 'published';`;
-            } else {
-              granted = true;
-              statusCode = 200;
-              statusText = '200 OK';
-              reason = `Granted: Document matches ownership constraint ({ author: '${selectedPersona.id}' }).`;
-              sql += ` WHERE "author_id" = '${selectedPersona.id}';`;
-            }
-          } else {
-            granted = false;
-            statusCode = 403;
-            statusText = '403 Forbidden (Row-Level Security)';
-            reason = `Denied: You do not have ownership rights to modify document owned by someone else.`;
-            sql += ` WHERE "author_id" = '${selectedPersona.id}'; -- Yielded 0 matching rows`;
-          }
-        }
-      } else if (selectedCollection === 'Users') {
-        if (docOwnership === 'own') {
-          granted = true;
-          statusCode = 200;
-          statusText = '200 OK';
-          reason = `Granted: User is requesting their own profile record (${selectedPersona.id}).`;
-          sql += ` WHERE "id" = '${selectedPersona.id}';`;
+      statusText = statusCode === 401 ? '401 Unauthorized' : '403 Forbidden';
+    };
+
+    if (rolePerm.conditionCode) {
+      const res = evalAccess(rolePerm.conditionCode, user);
+      if (!res.ok) {
+        granted = false;
+        statusCode = 500;
+        statusText = '500 Evaluation Error';
+        reason = `Access function threw: ${res.error}`;
+        returned = res.error;
+      } else if (typeof res.value === 'boolean' || res.value === null || res.value === undefined) {
+        granted = res.value === true;
+        returned = String(res.value);
+        if (granted) {
+          successCodes();
+          reason = `Executed access function returned ${String(res.value)} — the operation is granted unconditionally.`;
         } else {
-          granted = false;
-          statusCode = 403;
-          statusText = '403 Forbidden';
-          reason = `Denied: Non-admin users cannot access other users' accounts.`;
-          sql += ` WHERE "id" = '${selectedPersona.id}';`;
-        }
-      } else if (selectedCollection === 'Orders') {
-        if (docOwnership === 'own') {
-          granted = true;
-          statusCode = 200;
-          statusText = '200 OK';
-          reason = `Granted: Order belongs to customer ID (${selectedPersona.id}).`;
-          sql += ` WHERE "customer_id" = '${selectedPersona.id}';`;
-        } else {
-          granted = false;
-          statusCode = 403;
-          statusText = '403 Forbidden';
-          reason = `Denied: Order belongs to another customer account.`;
-          sql += ` WHERE "customer_id" = '${selectedPersona.id}';`;
+          denyCodes();
+          reason = `Executed access function returned ${String(res.value)} — access denied.`;
         }
       } else {
-        granted = true;
-        statusCode = 200;
-        statusText = '200 OK';
-        reason = 'Condition passed.';
+        // The function returned a where clause: evaluate it against the target document.
+        const where = res.value as Record<string, unknown>;
+        returned = JSON.stringify(where, null, 2);
+        const matches = matchesWhere(targetDoc, where);
+        granted = matches;
+        if (matches) {
+          successCodes();
+          reason = `Executed access function returned an RLS constraint; the target document (${docOwnership === 'own' ? 'owned by the user' : 'owned by another user'}, ${docStatus}) satisfies it.`;
+        } else {
+          // Payload hides unreadable docs behind a 404 rather than leaking existence.
+          statusCode = selectedAction === 'read' ? 404 : 403;
+          statusText = statusCode === 404 ? '404 Not Found (RLS Filtered)' : '403 Forbidden (RLS Filtered)';
+          reason = `Executed access function returned an RLS constraint; the target document does not satisfy it, so zero rows match.`;
+        }
       }
+    } else if (rolePerm.allowed === true) {
+      granted = true;
+      returned = 'true';
+      successCodes();
+      reason = `Role "${selectedPersona.role}" has unconditional full "${selectedAction}" permissions on ${selectedCollection}.`;
+    } else {
+      granted = false;
+      returned = 'false';
+      denyCodes();
+      reason = `Access Denied: Role "${selectedPersona.role}" has no "${selectedAction}" permission on ${selectedCollection}.`;
     }
 
+    const sql = granted
+      ? `SELECT * FROM "${selectedCollection.toLowerCase()}"` +
+        (rolePerm.sqlFilter
+          ? ` ${rolePerm.sqlFilter}`
+          : rolePerm.allowed === true
+            ? '; -- Unrestricted query'
+            : ';')
+      : '-- Query not executed (access control returned false / no matching rows)';
+
     const mockPayloadData = granted ? {
-      id: docOwnership === 'own' ? (selectedPersona.id ? `doc_owned_by_${selectedPersona.id}` : 'doc_public_99') : 'doc_other_user_44',
+      id: targetDoc.id,
       collection: selectedCollection.toLowerCase(),
       status: docStatus,
-      author: docOwnership === 'own' ? (selectedPersona.id || 'anonymous') : 'user_other_999',
-      title: `${selectedCollection} Sample Resource #101`,
-      updatedAt: new Date().toISOString(),
+      author: targetDoc.author,
+      title: targetDoc.title,
+      updatedAt: targetDoc.updatedAt,
       simulatedUser: selectedPersona.name,
       evaluatedRole: selectedPersona.role,
     } : {
@@ -361,6 +379,7 @@ export default function RbacMatrixPage() {
       reason,
       sqlQuery: sql,
       fnCode,
+      returned,
       mockPayload: JSON.stringify(mockPayloadData, null, 2),
     });
   };
@@ -370,10 +389,6 @@ export default function RbacMatrixPage() {
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
-
-  const currentCollectionConfig = useMemo(() => {
-    return MATRIX_COLLECTIONS.find(c => c.collection === selectedCollection) || MATRIX_COLLECTIONS[0];
-  }, [selectedCollection]);
 
   return (
     <div className="standalone-page">
@@ -401,7 +416,7 @@ export default function RbacMatrixPage() {
               <div className="kick">Security &amp; Row-Level Security (RLS)</div>
               <h1 style={{ margin: '4px 0 8px' }}>Visual RBAC Matrix &amp; Simulator</h1>
               <p className="lead" style={{ margin: 0, maxWidth: 820 }}>
-                Explore role-based access control, test query filters against simulated user sessions, and generate zero-trust TypeScript access functions for Payload 3.x.
+                Explore role-based access control, execute real access-control functions against simulated user sessions and documents, and generate zero-trust TypeScript access functions for Payload 3.x.
               </p>
             </div>
 
@@ -435,7 +450,7 @@ export default function RbacMatrixPage() {
                   cursor: 'pointer',
                 }}
               >
-                ⚡ Live Persona Tester
+                ⚡ Persona Preview
               </button>
               <button
                 onClick={() => setActiveTab('snippets')}
@@ -538,7 +553,6 @@ export default function RbacMatrixPage() {
                                     const p = perms[act];
                                     const isAllowed = p.allowed === true;
                                     const isDenied = p.allowed === false;
-                                    const isCond = p.allowed === 'conditional';
 
                                     return (
                                       <td key={act} style={{ padding: '12px 16px', verticalAlign: 'top' }}>
@@ -868,6 +882,14 @@ export default function RbacMatrixPage() {
                       <pre style={{ margin: 0, padding: 12, background: 'rgba(0,0,0,0.3)', borderRadius: 6, fontSize: 12, fontFamily: 'var(--font-mono)', color: '#a78bfa', overflowX: 'auto' }}>
                         {simulationResult.fnCode}
                       </pre>
+                      {simulationResult.returned && (
+                        <div style={{ marginTop: 10, fontSize: 11, color: 'var(--muted)', fontWeight: 700 }}>
+                          ▸ RETURNED VALUE (evaluated at runtime)
+                          <pre style={{ margin: '4px 0 0', padding: 10, background: 'rgba(0,0,0,0.3)', borderRadius: 6, fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 400, color: simulationResult.granted ? '#34d399' : '#f87171', overflowX: 'auto' }}>
+                            {simulationResult.returned}
+                          </pre>
+                        </div>
+                      )}
                     </div>
 
                     {/* Response Payload */}

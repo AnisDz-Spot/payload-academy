@@ -108,7 +108,7 @@ const PRESETS: Record<string, { label: string; description: string; data: Lexica
               { type: 'text', text: 'Payload 3.x replaces Slate with ', format: 0, version: 1 },
               { type: 'text', text: 'Lexical', format: 1, version: 1 },
               { type: 'text', text: ', offering a blazing fast AST schema built for ', format: 0, version: 1 },
-              { type: 'link', url: 'https://nextjs.org', target: '_blank', version: 1, children: [{ type: 'text', text: 'Next.js 15 Server Components', format: 0, version: 1 }] },
+              { type: 'link', url: 'https://nextjs.org', target: '_blank', version: 1, children: [{ type: 'text', text: 'Next.js 16 Server Components', format: 0, version: 1 }] },
               { type: 'text', text: '.', format: 0, version: 1 },
             ],
           },
@@ -377,6 +377,9 @@ export default function LexicalInspectorPage() {
               <h1 style={{ margin: '4px 0 8px' }}>Lexical AST Inspector &amp; React Serializer</h1>
               <p className="lead" style={{ margin: 0, maxWidth: 840 }}>
                 Explore how Payload 3.x transforms rich content into a type-safe Abstract Syntax Tree (AST), inspect node hierarchies, and preview React Server Component serialization.
+                <span style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--muted)' }}>
+                  🧪 Simulated AST — node data is illustrative of Payload&apos;s Lexical schema rather than parsed live from your editor.
+                </span>
               </p>
             </div>
 

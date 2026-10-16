@@ -38,11 +38,11 @@ const TOUR_STEPS: TourStep[] = [
     badge: 'Step 2 of 4 • Practice',
     badgeColor: '#10b981',
     icon: '💻',
-    title: 'Live Code Challenges & Quizzes',
+    title: 'Code Challenges & Quizzes',
     subtitle: 'Learn by doing with instant browser validation',
-    description: 'Every lesson includes live TypeScript code challenges, runnable schema snippets, and checkpoint quizzes with detailed explanations and XP streaks.',
+    description: 'Every lesson includes guided TypeScript code challenges, schema snippets, and checkpoint quizzes with detailed explanations and XP streaks.',
     highlights: [
-      { icon: '▶️', title: 'In-Browser Code Runner', desc: 'Execute live TypeScript schema validations and test API endpoints directly.' },
+      { icon: '▶️', title: 'Guided Code Checks', desc: 'Write TypeScript schema configs and validate your approach against curated checks.' },
       { icon: '🎯', title: 'Knowledge Checkpoints', desc: 'Answer interactive quiz questions to reinforce concepts and earn mastery XP.' },
       { icon: '🔥', title: 'Daily Study Streaks', desc: 'Keep your streak alive and track your progress on your personal dashboard.' }
     ]

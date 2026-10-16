@@ -106,8 +106,7 @@ export const CardItem = ({
   rotateY?: number | string;
   rotateZ?: number | string;
   style?: React.CSSProperties;
-  [key: string]: any;
-}) => {
+} & React.HTMLAttributes<HTMLElement>) => {
   const ref = useRef<HTMLDivElement>(null);
   const [isMouseEntered] = useMouseEnter();
 

@@ -4,6 +4,7 @@ import { LESSONS } from '@/data/lessons';
 import { Role } from '@/data/types';
 
 import { ACHIEVEMENTS, Achievement } from '@/data/achievements';
+import { todayKey, computeStreak } from '@/lib/xp';
 
 export type ModalType = 'none' | 'schema' | 'command' | 'backup' | 'shortcuts' | 'ai' | 'pomodoro' | 'onboarding' | 'auth';
 
@@ -16,30 +17,6 @@ export interface UserProfile {
   isPro: boolean;
   planType: 'free' | 'monthly' | 'annual' | 'lifetime';
   createdAt: string;
-}
-
-// ─── Streak helpers ───────────────────────────────────────────────
-function todayKey() {
-  return new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-}
-
-function computeStreak(days: string[]): number {
-  if (!days.length) return 0;
-  const sorted = [...new Set(days)].sort().reverse();
-  const today = todayKey();
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  if (sorted[0] !== today && sorted[0] !== yesterday) return 0;
-  let streak = 0;
-  let expected = sorted[0] === today ? today : yesterday;
-  for (const d of sorted) {
-    if (d === expected) {
-      streak++;
-      const dt = new Date(expected);
-      dt.setDate(dt.getDate() - 1);
-      expected = dt.toISOString().slice(0, 10);
-    } else break;
-  }
-  return streak;
 }
 
 // ─── Context type ─────────────────────────────────────────────────
@@ -195,7 +172,6 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // One-time hydration on mount: read persisted `pa-*` keys, then fetch authenticated user.
   /* eslint-disable react-hooks/set-state-in-effect -- intentional one-time localStorage hydration */
   useEffect(() => {
-    let localData: any = {};
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const savedDone     = JSON.parse(window.localStorage.getItem('pa-done')       || '{}');
@@ -225,18 +201,6 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setBookmarks(savedBkmarks);
         setLessonFeedback(savedFeedback);
         setStudyDays(savedDays);
-
-        localData = {
-          completedLessons: savedDone,
-          completedQuizzes: savedQuizzes,
-          examScore: savedExam !== null ? Number(savedExam) : null,
-          userNotes: savedNotes,
-          bookmarks: savedBkmarks,
-          lessonFeedback: savedFeedback,
-          studyDays: savedDays,
-          theme: savedTheme,
-          currentLessonIndex: savedCur,
-        };
 
         if (typeof document !== 'undefined' && document.documentElement) {
           document.documentElement.setAttribute('data-theme', savedTheme);

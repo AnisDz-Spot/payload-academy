@@ -232,7 +232,7 @@ export const AuthModal: React.FC = () => {
                     border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer',
                   }}
                 >
-                  Close — I'll check my email
+                  Close — I&apos;ll check my email
                 </button>
               </div>
 
@@ -248,7 +248,7 @@ export const AuthModal: React.FC = () => {
               )}
 
               <div style={{ marginTop: 20, fontSize: 11, color: '#475569' }}>
-                Didn't receive it? Check your spam folder or try a different email address.
+                Didn&apos;t receive it? Check your spam folder or try a different email address.
               </div>
             </div>
           ) : (

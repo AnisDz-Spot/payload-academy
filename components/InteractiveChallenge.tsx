@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Challenge } from '@/data/types';
 import { useAcademy } from '@/context/AcademyContext';
 import { getChallengeSpec } from '@/data/challengeSuite';
@@ -20,47 +20,75 @@ export const InteractiveChallenge: React.FC<Props> = ({ lessonId, challenge }) =
   const [testResult, setTestResult] = useState<{ passed: boolean; message: string; details?: string[] } | null>(null);
   const [showHint, setShowHint] = useState(false);
 
-  useEffect(() => {
+  const [lastLesson, setLastLesson] = useState(lessonId);
+  if (lastLesson !== lessonId) {
+    setLastLesson(lessonId);
     setCode(defaultStarter);
     setTestResult(null);
     setShowHint(false);
-  }, [lessonId]);
+  }
 
   const handleRunTests = async () => {
     setIsRunning(true);
     setTestResult(null);
 
-    await new Promise((r) => setTimeout(r, 600));
-
-    const userCode = code.trim();
-    const checks = spec.testCases.map((tc) => {
-      const passed = tc.test(userCode);
-      return {
-        passed,
-        label: tc.label,
-        hint: tc.failureHint,
-      };
-    });
-
-    const allPassed = checks.every((c) => c.passed);
-    setIsRunning(false);
-
-    if (allPassed) {
-      if (soundEnabled) playSuccessChime();
-      setTestResult({
-        passed: true,
-        message: '🎉 All Verification Tests Passed! Excellent engineering.',
-        details: checks.map((c) => `✓ ${c.label}`),
+    try {
+      const res = await fetch('/api/challenge/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonId, code: code.trim() }),
       });
-      if (!completedLessons[lessonId]) {
-        toggleComplete(lessonId);
+
+      const data = await res.json();
+
+      if (res.status === 401) {
+        setTestResult({
+          passed: false,
+          message: '🔒 Sign in to your account to run graded challenges.',
+        });
+        return;
       }
-    } else {
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Grading service unavailable.');
+      }
+
+      const checks: { passed: boolean; label: string; hint?: string }[] = data.checks || [];
+      const syntaxErrors: string[] = data.syntaxErrors || [];
+
+      if (syntaxErrors.length > 0) {
+        setTestResult({
+          passed: false,
+          message: '⛔ Syntax error — fix your TypeScript before tests can run:',
+          details: syntaxErrors.map((e) => `✗ ${e}`),
+        });
+        return;
+      }
+
+      if (data.passed) {
+        if (soundEnabled) playSuccessChime();
+        setTestResult({
+          passed: true,
+          message: '🎉 All Verification Tests Passed! Excellent engineering.',
+          details: checks.map((c) => `✓ ${c.label}`),
+        });
+        if (!completedLessons[lessonId]) {
+          toggleComplete(lessonId);
+        }
+      } else {
+        setTestResult({
+          passed: false,
+          message: '⚠️ Test verification failed. Requirements missing:',
+          details: checks.map((c) => (c.passed ? `✓ ${c.label}` : `✗ ${c.label} — Hint: ${c.hint}`)),
+        });
+      }
+    } catch (err) {
       setTestResult({
         passed: false,
-        message: '⚠️ Test verification failed. Requirements missing:',
-        details: checks.map((c) => (c.passed ? `✓ ${c.label}` : `✗ ${c.label} — Hint: ${c.hint}`)),
+        message: `⚠️ ${err instanceof Error ? err.message : 'Could not reach the grading service.'}`,
       });
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -71,7 +99,7 @@ export const InteractiveChallenge: React.FC<Props> = ({ lessonId, challenge }) =
           <span className="challenge-icon" style={{ fontSize: 24 }}>⚡</span>
           <div>
             <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Interactive Code Challenge</h3>
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>Hands-on practice &amp; automated test runner</span>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>Hands-on practice &amp; AST-based grading on the server</span>
           </div>
         </div>
         {challenge.docsPath && (

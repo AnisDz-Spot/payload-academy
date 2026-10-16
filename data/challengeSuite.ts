@@ -1,9 +1,13 @@
 // data/challengeSuite.ts
+//
+// Client-safe challenge metadata: starter code, reference solution and the
+// human-readable description of each check. The actual AST-based grading logic
+// lives server-side in `lib/challengeGrading.ts` (so the TypeScript compiler is
+// never bundled into the browser).
 
 export interface TestCase {
   id: string;
   label: string;
-  test: (code: string) => boolean;
   failureHint: string;
 }
 
@@ -32,19 +36,16 @@ export const payloadAdvantage = {
       {
         id: 'exec',
         label: 'Declares in-process execution model for Next.js App Router',
-        test: (c) => c.toLowerCase().includes('in-process'),
         failureHint: "Set executionModel to 'in-process' (Payload lives directly inside your Next.js app).",
       },
       {
         id: 'ts',
         label: 'Specifies 100% TypeScript type safety',
-        test: (c) => c.toLowerCase().includes('typescript'),
         failureHint: "Set typeSafety to '100% typescript'.",
       },
       {
         id: 'db',
         label: 'Lists supported databases (Postgres, SQLite, or MongoDB)',
-        test: (c) => c.toLowerCase().includes('postgres') || c.toLowerCase().includes('sqlite'),
         failureHint: "Include 'postgres' or 'sqlite' in databaseChoice.",
       },
     ],
@@ -72,13 +73,11 @@ export default withPayload(nextConfig)
       {
         id: 'with-payload',
         label: 'Wraps nextConfig with withPayload()',
-        test: (c) => /export\s+default\s+withPayload\s*\(\s*nextConfig\s*\)/.test(c),
         failureHint: 'Make sure you export: export default withPayload(nextConfig)',
       },
       {
         id: 'import',
         label: 'Imports withPayload from @payloadcms/next/withPayload',
-        test: (c) => c.includes('@payloadcms/next/withPayload'),
         failureHint: "Import withPayload from '@payloadcms/next/withPayload'",
       },
     ],
@@ -112,19 +111,16 @@ export default buildConfig({
       {
         id: 'secret-env',
         label: 'Reads PAYLOAD_SECRET securely from process.env',
-        test: (c) => c.includes('process.env.PAYLOAD_SECRET'),
         failureHint: "Define secret: process.env.PAYLOAD_SECRET || ''",
       },
       {
         id: 'db-adapter',
         label: 'Configures postgresAdapter with connectionString',
-        test: (c) => c.includes('postgresAdapter') && c.includes('connectionString'),
         failureHint: 'Pass postgresAdapter({ pool: { connectionString: ... } }) to db property.',
       },
       {
         id: 'cors-whitelist',
         label: 'Whitelists strict CORS domain array',
-        test: (c) => c.includes('cors:') && c.includes('https://mywebsite.com'),
         failureHint: "Add cors: ['https://mywebsite.com'] to whitelist your domain.",
       },
     ],
@@ -160,25 +156,21 @@ export const Products: CollectionConfig = {
       {
         id: 'slug',
         label: "Sets collection slug to 'products'",
-        test: (c) => c.includes("slug: 'products'") || c.includes('slug: "products"'),
         failureHint: "Define slug: 'products'",
       },
       {
         id: 'useAsTitle',
         label: "Configures admin.useAsTitle to 'title'",
-        test: (c) => c.includes("useAsTitle: 'title'") || c.includes('useAsTitle: "title"'),
         failureHint: "Define admin: { useAsTitle: 'title' }",
       },
       {
         id: 'versions',
         label: 'Enables drafts and autosave versioning',
-        test: (c) => c.includes('drafts') && c.includes('autosave'),
         failureHint: 'Add versions: { drafts: { autosave: true } }',
       },
       {
         id: 'fields',
         label: 'Defines required title (text) and price (number) fields',
-        test: (c) => c.includes("name: 'title'") && c.includes("type: 'text'") && c.includes("name: 'price'") && c.includes("type: 'number'"),
         failureHint: "Add both title (type: 'text', required: true) and price (type: 'number', required: true) in fields.",
       },
     ],
@@ -213,19 +205,16 @@ export const PageBuilderField: Field = {
       {
         id: 'blocks-type',
         label: "Configures type as 'blocks'",
-        test: (c) => c.includes("type: 'blocks'") || c.includes('type: "blocks"'),
         failureHint: "Set type: 'blocks'",
       },
       {
         id: 'hero-slug',
         label: "Declares block with slug 'hero'",
-        test: (c) => c.includes("slug: 'hero'") || c.includes('slug: "hero"'),
         failureHint: "Add a block object with slug: 'hero'",
       },
       {
         id: 'hero-fields',
         label: 'Includes heading (text) and backgroundImage (upload) fields',
-        test: (c) => c.includes("name: 'heading'") && c.includes("name: 'backgroundImage'") && c.includes('relationTo'),
         failureHint: "In hero block fields, include 'heading' (text) and 'backgroundImage' (upload, relationTo: 'media').",
       },
     ],
@@ -263,19 +252,16 @@ export const canReadPosts: Access = ({ req: { user } }) => {
       {
         id: 'unauth-check',
         label: 'Returns query constraint for published posts when user is null',
-        test: (c) => c.includes('!user') && c.includes('_status') && c.includes('published'),
         failureHint: "When !user, return { _status: { equals: 'published' } }",
       },
       {
         id: 'admin-bypass',
         label: 'Grants full boolean true for admin users',
-        test: (c) => c.includes("user.role === 'admin'") || c.includes('user?.role === "admin"'),
         failureHint: "If user.role === 'admin', return true.",
       },
       {
         id: 'author-or-published',
         label: 'Returns OR constraint matching published posts or user.id author',
-        test: (c) => c.includes('or:') || (c.includes('author') && c.includes('user.id')),
         failureHint: 'Return an OR query matching _status published or author equal to user.id.',
       },
     ],
@@ -309,19 +295,16 @@ export const autoSlugHook: CollectionBeforeChangeHook = async ({ data, operation
       {
         id: 'title-check',
         label: 'Checks if data.title exists and slug is missing or operation is create',
-        test: (c) => c.includes('data?.title') || (c.includes('data.title') && c.includes('operation')),
         failureHint: "Verify data?.title and (operation === 'create' || !data.slug)",
       },
       {
         id: 'slug-replace',
         label: 'Applies slugification transforms (toLowerCase, replace regex)',
-        test: (c) => c.includes('.toLowerCase()') && c.includes('.replace('),
         failureHint: 'Transform title with toLowerCase() and replace(/[^a-z0-9]+/g, "-")',
       },
       {
         id: 'return-data',
         label: 'Returns the mutated data object',
-        test: (c) => /return\s+data/.test(c),
         failureHint: 'Ensure you return data at the end of the beforeChange hook.',
       },
     ],
@@ -364,19 +347,16 @@ export async function fetchTopArticles() {
       {
         id: 'collection-slug',
         label: "Specifies collection: 'posts'",
-        test: (c) => c.includes("collection: 'posts'") || c.includes('collection: "posts"'),
         failureHint: "Pass collection: 'posts'",
       },
       {
         id: 'where-published',
         label: "Filters for published posts with _status equals 'published'",
-        test: (c) => c.includes('_status') && c.includes('published'),
         failureHint: "Add where: { _status: { equals: 'published' } }",
       },
       {
         id: 'sort-limit',
         label: "Applies limit: 5 and sort: '-createdAt'",
-        test: (c) => c.includes('limit: 5') && (c.includes("'-createdAt'") || c.includes('"-createdAt"')),
         failureHint: "Set limit: 5 and sort: '-createdAt'",
       },
     ],
@@ -416,18 +396,1655 @@ export const Users: CollectionConfig = {
       {
         id: 'defaultPopulate',
         label: 'Configures defaultPopulate projection object on collection',
-        test: (c) => c.includes('defaultPopulate:'),
         failureHint: 'Add defaultPopulate: { firstName: true, lastName: true, email: true }',
       },
       {
         id: 'projected-fields',
         label: 'Selects firstName, lastName, and email',
-        test: (c) => c.includes('firstName: true') && c.includes('email: true'),
         failureHint: 'Specify firstName: true and email: true inside defaultPopulate.',
       },
     ],
   },
+
+  globals: {
+    starterCode: `import type { GlobalConfig } from 'payload'
+
+export const Navigation: GlobalConfig = {
+  slug: 'navigation',
+  // Add a 'logo' upload field and a 'links' array of { label, url }
+  fields: [],
+}
+`,
+    solutionCode: `import type { GlobalConfig } from 'payload'
+
+export const Navigation: GlobalConfig = {
+  slug: 'navigation',
+  fields: [
+    { name: 'logo', type: 'upload', relationTo: 'media' },
+    {
+      name: 'links',
+      type: 'array',
+      fields: [
+        { name: 'label', type: 'text', required: true },
+        { name: 'url', type: 'text', required: true },
+      ],
+    },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'slug-navigation',
+        label: "Defines a global with slug 'navigation'",
+        failureHint: "Set slug: 'navigation' on the global config.",
+      },
+      {
+        id: 'logo-upload',
+        label: "Adds a 'logo' upload field linked to media",
+        failureHint: "Add { name: 'logo', type: 'upload', relationTo: 'media' }.",
+      },
+      {
+        id: 'links-array',
+        label: "Adds a 'links' array field",
+        failureHint: "Add a field { name: 'links', type: 'array', fields: [...] }.",
+      },
+    ],
+  },
+
+  join: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Categories: CollectionConfig = {
+  slug: 'categories',
+  fields: [
+    { name: 'title', type: 'text' },
+    // Add a join field linking to posts via the 'category' relationship
+  ],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Categories: CollectionConfig = {
+  slug: 'categories',
+  fields: [
+    { name: 'title', type: 'text' },
+    {
+      name: 'relatedPosts',
+      type: 'join',
+      collection: 'posts',
+      on: 'category',
+    },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'join-type',
+        label: "Declares a field of type 'join'",
+        failureHint: "Add a field with type: 'join'.",
+      },
+      {
+        id: 'join-config',
+        label: "Targets collection 'posts' joined on the 'category' field",
+        failureHint: "Set collection: 'posts' and on: 'category' on the join field.",
+      },
+    ],
+  },
+
+  auth: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Users: CollectionConfig = {
+  slug: 'users',
+  auth: {
+    // Configure maxLoginAttempts and secure cookie settings
+  },
+  fields: [],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Users: CollectionConfig = {
+  slug: 'users',
+  auth: {
+    maxLoginAttempts: 5,
+    lockTime: 600000,
+    cookies: {
+      sameSite: 'Lax',
+      secure: true,
+      httpOnly: true,
+    },
+  },
+  fields: [],
+}
+`,
+    testCases: [
+      {
+        id: 'auth-maxlogin',
+        label: 'Sets a numeric maxLoginAttempts lockout threshold',
+        failureHint: 'Add auth.maxLoginAttempts (a number, e.g. 5).',
+      },
+      {
+        id: 'auth-cookie-secure',
+        label: 'Enables secure auth cookies',
+        failureHint: 'Set auth.cookies.secure to true.',
+      },
+      {
+        id: 'auth-cookie-httponly',
+        label: 'Enables httpOnly auth cookies',
+        failureHint: 'Set auth.cookies.httpOnly to true.',
+      },
+    ],
+  },
+
+  apikeys: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const ServiceAccounts: CollectionConfig = {
+  slug: 'service-accounts',
+  auth: {
+    // Enable API key authentication
+  },
+  fields: [],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const ServiceAccounts: CollectionConfig = {
+  slug: 'service-accounts',
+  auth: {
+    useAPIKey: true,
+  },
+  fields: [],
+}
+`,
+    testCases: [
+      {
+        id: 'auth-block',
+        label: 'Defines an auth configuration block',
+        failureHint: 'Add an auth: { ... } object to the collection.',
+      },
+      {
+        id: 'use-api-key',
+        label: 'Enables API key authentication (useAPIKey: true)',
+        failureHint: 'Set auth.useAPIKey to true.',
+      },
+    ],
+  },
+
+  uploads: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Media: CollectionConfig = {
+  slug: 'media',
+  upload: {
+    // Add imageSizes: thumbnail, card, and hero
+  },
+  fields: [],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Media: CollectionConfig = {
+  slug: 'media',
+  upload: {
+    imageSizes: [
+      { name: 'thumbnail', width: 400, height: 300 },
+      { name: 'card', width: 768, height: 576 },
+      { name: 'hero', width: 1600, height: 900 },
+    ],
+  },
+  fields: [],
+}
+`,
+    testCases: [
+      {
+        id: 'upload-imagesizes',
+        label: 'Declares an upload.imageSizes array',
+        failureHint: 'Add upload: { imageSizes: [...] }.',
+      },
+      {
+        id: 'sizes-named',
+        label: "Defines 'thumbnail', 'card', and 'hero' sizes",
+        failureHint: "Include size entries named 'thumbnail', 'card', and 'hero'.",
+      },
+    ],
+  },
+
+  layout: {
+    starterCode: `import type { Field } from 'payload'
+
+export const LayoutField: Field = {
+  // Build a Tabs field: a 'Content' tab and an 'SEO' group tab
+}
+`,
+    solutionCode: `import type { Field } from 'payload'
+
+export const LayoutField: Field = {
+  type: 'tabs',
+  tabs: [
+    {
+      label: 'Content',
+      fields: [{ name: 'title', type: 'text' }],
+    },
+    {
+      label: 'SEO',
+      fields: [
+        {
+          name: 'seo',
+          type: 'group',
+          fields: [
+            { name: 'metaTitle', type: 'text' },
+            { name: 'metaDescription', type: 'textarea' },
+          ],
+        },
+      ],
+    },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'tabs-type',
+        label: "Declares a field of type 'tabs'",
+        failureHint: "Set type: 'tabs'.",
+      },
+      {
+        id: 'tabs-array',
+        label: 'Provides a tabs array with at least two tabs',
+        failureHint: 'Add a tabs: [ ... ] array containing at least two tab objects.',
+      },
+      {
+        id: 'seo-group',
+        label: "Nests an 'seo' group field",
+        failureHint: "Add a field { name: 'seo', type: 'group', fields: [...] }.",
+      },
+    ],
+  },
+
+  webhooks: {
+    starterCode: `import type { CollectionAfterChangeHook } from 'payload'
+
+// Send an outgoing webhook with an HMAC SHA-256 signature on change
+export const notifyWebhook: CollectionAfterChangeHook = async ({ doc }) => {
+  // Sign the payload and POST it to a remote endpoint
+  return doc
+}
+`,
+    solutionCode: `import type { CollectionAfterChangeHook } from 'payload'
+import crypto from 'crypto'
+
+export const notifyWebhook: CollectionAfterChangeHook = async ({ doc }) => {
+  const body = JSON.stringify({ id: doc.id })
+  const signature = crypto
+    .createHmac('sha256', process.env.WEBHOOK_SECRET || '')
+    .update(body)
+    .digest('hex')
+
+  await fetch('https://example.com/webhook', {
+    method: 'POST',
+    headers: { 'x-signature': signature },
+    body,
+  })
+
+  return doc
+}
+`,
+    testCases: [
+      {
+        id: 'sign-hmac',
+        label: "Signs the payload with an HMAC SHA-256 digest",
+        failureHint: "Use crypto.createHmac('sha256', secret).update(body).digest('hex').",
+      },
+      {
+        id: 'outgoing-fetch',
+        label: 'POSTs the signed payload to a remote endpoint',
+        failureHint: 'Call fetch(...) with method POST to deliver the webhook.',
+      },
+      {
+        id: 'return-doc',
+        label: 'Returns the mutated doc',
+        failureHint: 'Return doc at the end of the hook.',
+      },
+    ],
+  },
+
+  i18n: {
+    starterCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  // Enable localization for English, French, and Arabic
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  localization: {
+    locales: ['en', 'fr', 'ar'],
+    defaultLocale: 'en',
+    fallback: true,
+  },
+})
+`,
+    testCases: [
+      {
+        id: 'locales',
+        label: "Registers the 'en', 'fr', and 'ar' locales",
+        failureHint: "Set localization.locales to ['en', 'fr', 'ar'].",
+      },
+      {
+        id: 'default-locale',
+        label: "Sets the default locale to 'en'",
+        failureHint: "Set localization.defaultLocale to 'en'.",
+      },
+    ],
+  },
+
+  jobs: {
+    starterCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  // Configure a jobs queue with an email broadcast task
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  jobs: {
+    tasks: [
+      {
+        slug: 'emailBroadcast',
+        handler: async ({ input }) => {
+          // fan out the email batch
+          return { output: { sent: input?.count ?? 0 } }
+        },
+      },
+    ],
+  },
+})
+`,
+    testCases: [
+      {
+        id: 'jobs-tasks',
+        label: 'Declares a jobs.tasks array',
+        failureHint: 'Add jobs: { tasks: [ ... ] }.',
+      },
+      {
+        id: 'task-slug',
+        label: 'Defines at least one task with a slug',
+        failureHint: 'Give each task object a slug string.',
+      },
+    ],
+  },
+
+  queries: {
+    starterCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function complexQuery() {
+  const payload = await getPayload({ config })
+
+  const results = await payload.find({
+    collection: 'posts',
+    // Build an OR of an AND clause, and project specific columns
+  })
+
+  return results.docs
+}
+`,
+    solutionCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function complexQuery() {
+  const payload = await getPayload({ config })
+
+  const results = await payload.find({
+    collection: 'posts',
+    where: {
+      or: [
+        { and: [{ _status: { equals: 'published' } }, { category: { equals: 'tech' } }] },
+        { featured: { equals: true } },
+      ],
+    },
+    select: { title: true, slug: true },
+    depth: 0,
+  })
+
+  return results.docs
+}
+`,
+    testCases: [
+      {
+        id: 'where-or',
+        label: 'Builds an OR where clause array',
+        failureHint: 'Add where: { or: [ ... ] }.',
+      },
+      {
+        id: 'select-projection',
+        label: 'Projects columns with a select object',
+        failureHint: 'Add select: { title: true, ... } to limit returned fields.',
+      },
+    ],
+  },
+
+  structure: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+  ],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+import type { Post } from '@/payload-types'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'content', type: 'richText' },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'typed-collection',
+        label: "Defines a typed 'posts' collection with a fields array",
+        failureHint: "Add slug: 'posts' and a non-empty fields array.",
+      },
+      {
+        id: 'generated-types',
+        label: 'Imports generated types from @/payload-types',
+        failureHint: "Import a generated type: import type { Post } from '@/payload-types'",
+      },
+    ],
+  },
+
+  cli: {
+    starterCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+async function listPosts() {
+  const payload = await getPayload({ config })
+  // Query the posts collection
+}
+`,
+    solutionCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+async function listPosts() {
+  const payload = await getPayload({ config })
+  const posts = await payload.find({ collection: 'posts' })
+  return posts.docs
+}
+`,
+    testCases: [
+      {
+        id: 'imports-payload',
+        label: "Imports from 'payload'",
+        failureHint: "import { getPayload } from 'payload'",
+      },
+      {
+        id: 'getpayload',
+        label: 'Boots the Local API with getPayload()',
+        failureHint: 'Call getPayload({ config }) to get a Payload instance.',
+      },
+      {
+        id: 'find-posts',
+        label: "Queries the 'posts' collection",
+        failureHint: "await payload.find({ collection: 'posts' })",
+      },
+    ],
+  },
+
+  customauth: {
+    starterCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function githubAuth(code: string) {
+  const payload = await getPayload({ config })
+  // Exchange the code with GitHub and log the user in
+  return { ok: true }
+}
+`,
+    solutionCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function githubAuth(code: string) {
+  const payload = await getPayload({ config })
+
+  const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  })
+  const data = await tokenRes.json()
+
+  await payload.create({
+    collection: 'users',
+    data: { email: 'github-user@example.com', githubToken: data.access_token },
+  })
+
+  return Response.json({ ok: true })
+}
+`,
+    testCases: [
+      {
+        id: 'github-fetch',
+        label: 'Exchanges the code at the GitHub OAuth token endpoint',
+        failureHint: "fetch('https://github.com/login/oauth/access_token', ...)",
+      },
+      {
+        id: 'local-create',
+        label: "Creates/links the user with payload.create on 'users'",
+        failureHint: "await payload.create({ collection: 'users', data: ... })",
+      },
+      {
+        id: 'returns-response',
+        label: 'Returns a Response.json(...) for the route handler',
+        failureHint: 'End the handler with return Response.json({ ... }).',
+      },
+    ],
+  },
+
+  secprod: {
+    starterCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  cors: ['*'],
+  // Lock down the admin surface before production
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  cors: ['https://app.example.com'],
+  csrf: ['https://app.example.com'],
+})
+`,
+    testCases: [
+      {
+        id: 'strict-cors',
+        label: 'Restricts CORS to explicit origins (no wildcard)',
+        failureHint: "Set cors to an explicit array such as ['https://app.example.com'].",
+      },
+      {
+        id: 'csrf-set',
+        label: 'Enables CSRF protection with a trusted origin list',
+        failureHint: "Add csrf: ['https://app.example.com'].",
+      },
+    ],
+  },
+
+  drafts: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  // Enable drafts and live preview
+  fields: [{ name: 'title', type: 'text' }],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  versions: { drafts: true },
+  admin: {
+    livePreview: {
+      url: 'https://example.com/api/preview',
+      breakpoints: ['mobile', 'tablet', 'desktop'],
+    },
+  },
+  fields: [{ name: 'title', type: 'text' }],
+}
+`,
+    testCases: [
+      {
+        id: 'drafts-enabled',
+        label: 'Enables versioned drafts',
+        failureHint: 'Add versions: { drafts: true }.',
+      },
+      {
+        id: 'live-preview-url',
+        label: 'Configures a live preview URL',
+        failureHint: "Add admin.livePreview.url.",
+      },
+      {
+        id: 'breakpoints',
+        label: 'Declares live preview breakpoints',
+        failureHint: "Add admin.livePreview.breakpoints: ['mobile', 'tablet', 'desktop'].",
+      },
+    ],
+  },
+
+  actions: {
+    starterCode: `import { z } from 'zod'
+import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function createInquiry(form: unknown) {
+  // Validate the input and persist an inquiry
+  return { ok: true }
+}
+`,
+    solutionCode: `import { z } from 'zod'
+import { getPayload } from 'payload'
+import config from '@payload-config'
+
+const inquirySchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  message: z.string(),
+})
+
+export async function createInquiry(form: unknown) {
+  const parsed = inquirySchema.safeParse(form)
+  if (!parsed.success) {
+    return { ok: false }
+  }
+
+  const payload = await getPayload({ config })
+  await payload.create({ collection: 'inquiries', data: parsed.data })
+  return { ok: true }
+}
+`,
+    testCases: [
+      {
+        id: 'zod-schema',
+        label: 'Defines a Zod object schema with string fields',
+        failureHint: 'Use z.object({ name: z.string(), ... }).',
+      },
+      {
+        id: 'validates',
+        label: 'Validates input with parse/safeParse before writing',
+        failureHint: 'Call inquirySchema.safeParse(form) inside createInquiry.',
+      },
+      {
+        id: 'local-create',
+        label: "Persists via payload.create on 'inquiries'",
+        failureHint: "await payload.create({ collection: 'inquiries', data: parsed.data })",
+      },
+    ],
+  },
+
+  frontend: {
+    starterCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export default async function Page() {
+  // Server-fetch posts at build time
+  return null
+}
+`,
+    solutionCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export const dynamic = 'force-static'
+
+export default async function Page() {
+  const payload = await getPayload({ config })
+  const posts = await payload.find({ collection: 'posts' })
+  return posts.docs
+}
+`,
+    testCases: [
+      {
+        id: 'server-component',
+        label: 'Uses the Local API inside a server component',
+        failureHint: 'Call getPayload({ config }) directly in the server component.',
+      },
+      {
+        id: 'finds-posts',
+        label: "Fetches the 'posts' collection",
+        failureHint: "payload.find({ collection: 'posts' })",
+      },
+      {
+        id: 'force-static',
+        label: "Opts into static rendering with dynamic = 'force-static'",
+        failureHint: "export const dynamic = 'force-static'.",
+      },
+    ],
+  },
+
+  seeding: {
+    starterCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function seed() {
+  const payload = await getPayload({ config })
+  // Seed an admin user without duplicating rows
+}
+`,
+    solutionCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function seed() {
+  const payload = await getPayload({ config })
+
+  const existing = await payload.count({ collection: 'users' })
+  if (existing.totalDocs > 0) {
+    return
+  }
+
+  await payload.create({
+    collection: 'users',
+    data: { email: 'admin@example.com', password: 'secret' },
+  })
+
+  return
+}
+`,
+    testCases: [
+      {
+        id: 'idempotent',
+        label: 'Guards the seed with a count() check before writing',
+        failureHint: 'Call payload.count({ collection: "users" }) and return early if docs already exist.',
+      },
+      {
+        id: 'creates-admin',
+        label: "Creates the admin user on the 'users' collection",
+        failureHint: "await payload.create({ collection: 'users', data: ... })",
+      },
+    ],
+  },
+
+  admin: {
+    starterCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  admin: {
+    // Swap in a custom dashboard component
+  },
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  admin: {
+    components: {
+      views: {
+        dashboard: { Component: '/components/Dashboard' },
+      },
+    },
+  },
+})
+`,
+    testCases: [
+      {
+        id: 'views-config',
+        label: 'Declares admin.components.views',
+        failureHint: 'Add admin: { components: { views: { ... } } }.',
+      },
+      {
+        id: 'dashboard-component',
+        label: 'Overrides the dashboard view component',
+        failureHint: "Set views.dashboard = { Component: '/components/Dashboard' }.",
+      },
+    ],
+  },
+
+  customui: {
+    starterCode: `import { TextFieldClientComponent } from '@payloadcms/ui'
+
+export const ColorPicker: TextFieldClientComponent = (props) => {
+  // Render a color input and wire it back to Payload
+  return props
+}
+`,
+    solutionCode: `import { TextFieldClientComponent } from '@payloadcms/ui'
+
+export const ColorPicker: TextFieldClientComponent = (props) => {
+  return {
+    ...props,
+    inputType: 'color',
+  }
+}
+`,
+    testCases: [
+      {
+        id: 'client-component',
+        label: 'Builds the field as a TextFieldClientComponent',
+        failureHint: 'Type ColorPicker as TextFieldClientComponent from @payloadcms/ui.',
+      },
+      {
+        id: 'color-input',
+        label: "Wires the input type to 'color'",
+        failureHint: "Include inputType: 'color' in the component.",
+      },
+    ],
+  },
+
+  theming: {
+    starterCode: `// Brand the admin panel with a custom theme
+export const adminTheme = {
+  brandColor: '',
+  css: '',
+}
+`,
+    solutionCode: `export const adminTheme = {
+  brandColor: '#6d28d9',
+  css: \`
+    :root {
+      --theme-elevation-0: #ffffff;
+      --theme-success-500: #10b981;
+    }
+    .nav {
+      background: linear-gradient(135deg, #6d28d9, #2563eb);
+    }
+  \`,
+}
+`,
+    testCases: [
+      {
+        id: 'brand-color',
+        label: 'Sets a brandColor token',
+        failureHint: "Set brandColor to a hex value such as '#6d28d9'.",
+      },
+      {
+        id: 'css-var',
+        label: 'Overrides a --theme-* CSS variable',
+        failureHint: 'In css, override a variable like --theme-elevation-0.',
+      },
+      {
+        id: 'gradient',
+        label: 'Applies a linear-gradient in the custom CSS',
+        failureHint: 'Add a linear-gradient(...) background rule.',
+      },
+    ],
+  },
+
+  whitelabel: {
+    starterCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  admin: {
+    // Replace the login screen and logo
+  },
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  admin: {
+    components: {
+      views: {
+        login: { Component: '/components/Login' },
+      },
+      graphics: {
+        Logo: '/components/Logo',
+        Icon: '/components/Icon',
+      },
+    },
+  },
+})
+`,
+    testCases: [
+      {
+        id: 'login-view',
+        label: 'Overrides the login view component',
+        failureHint: "Set admin.components.views.login = { Component: '/components/Login' }.",
+      },
+      {
+        id: 'graphics',
+        label: 'Supplies custom admin graphics',
+        failureHint: 'Add admin.components.graphics with Logo/Icon.',
+      },
+    ],
+  },
+
+  richtext: {
+    starterCode: `import { buildConfig } from 'payload'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
+
+export default buildConfig({
+  editor: lexicalEditor(),
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+import { lexicalEditor, defaultFeatures } from '@payloadcms/richtext-lexical'
+
+const calloutFeature = {
+  mark: { name: 'callout' },
+}
+
+export default buildConfig({
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => [...defaultFeatures, calloutFeature],
+  }),
+})
+`,
+    testCases: [
+      {
+        id: 'lexical-editor',
+        label: 'Configures the Lexical editor',
+        failureHint: 'Call lexicalEditor({ ... }).',
+      },
+      {
+        id: 'custom-feature',
+        label: 'Extends the default feature set',
+        failureHint: 'Spread defaultFeatures and append your own feature.',
+      },
+      {
+        id: 'callout-feature',
+        label: 'Adds a custom callout feature',
+        failureHint: 'Define and include a callout feature.',
+      },
+    ],
+  },
+
+  nesteddocs: {
+    starterCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  // Add the nested docs plugin for hierarchical pages
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+import { nestedDocsPlugin } from '@payloadcms/plugin-nested-docs'
+
+export default buildConfig({
+  plugins: [
+    nestedDocsPlugin({
+      collections: ['pages'],
+      generateLabel: (_, doc) => doc.title,
+    }),
+  ],
+})
+`,
+    testCases: [
+      {
+        id: 'plugin-import',
+        label: 'Imports the nested docs plugin',
+        failureHint: "import { nestedDocsPlugin } from '@payloadcms/plugin-nested-docs'",
+      },
+      {
+        id: 'plugins-array',
+        label: 'Registers the plugin in buildConfig.plugins',
+        failureHint: 'Add plugins: [ nestedDocsPlugin({ ... }) ].',
+      },
+      {
+        id: 'collections-target',
+        label: "Applies nesting to the 'pages' collection",
+        failureHint: "Pass collections: ['pages'] to the plugin.",
+      },
+    ],
+  },
+
+  transactions: {
+    starterCode: `import type { PayloadRequest } from 'payload'
+
+export async function transfer(req: PayloadRequest, from: string, to: string) {
+  // Perform the two writes atomically
+}
+`,
+    solutionCode: `import type { PayloadRequest } from 'payload'
+
+export async function transfer(req: PayloadRequest, from: string, to: string) {
+  const { db } = req.payload
+  const transaction = await db.beginTransaction()
+  try {
+    await db.commitTransaction(transaction)
+  } catch (err) {
+    await db.rollbackTransaction(transaction)
+    throw err
+  }
+}
+`,
+    testCases: [
+      {
+        id: 'begin',
+        label: 'Opens a transaction with beginTransaction',
+        failureHint: 'Call db.beginTransaction().',
+      },
+      {
+        id: 'commit',
+        label: 'Commits the transaction on success',
+        failureHint: 'Call db.commitTransaction(transaction).',
+      },
+      {
+        id: 'rollback',
+        label: 'Rolls back the transaction on failure',
+        failureHint: 'Call db.rollbackTransaction(transaction) in the catch block.',
+      },
+    ],
+  },
+
+  storage: {
+    starterCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  // Store media in S3 instead of local disk
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+import { s3Storage } from '@payloadcms/storage-s3'
+
+export default buildConfig({
+  plugins: [
+    s3Storage({
+      collections: { media: true },
+      bucket: process.env.S3_BUCKET || '',
+    }),
+  ],
+})
+`,
+    testCases: [
+      {
+        id: 'plugin-import',
+        label: 'Imports a Payload storage adapter',
+        failureHint: "import { s3Storage } from '@payloadcms/storage-s3'",
+      },
+      {
+        id: 'plugins-array',
+        label: 'Registers the storage adapter in plugins',
+        failureHint: 'Add plugins: [ s3Storage({ ... }) ].',
+      },
+      {
+        id: 'bucket-env',
+        label: 'Reads the bucket/credentials from the environment',
+        failureHint: 'Reference process.env.S3_BUCKET (or BLOB_READ_WRITE_TOKEN).',
+      },
+    ],
+  },
+
+  email: {
+    starterCode: `import { buildConfig } from 'payload'
+
+export default buildConfig({
+  // Send transactional email through an adapter
+})
+`,
+    solutionCode: `import { buildConfig } from 'payload'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
+
+export default buildConfig({
+  email: nodemailerAdapter({
+    defaultFromAddress: 'no-reply@example.com',
+    defaultFromName: 'Payload Academy',
+  }),
+})
+`,
+    testCases: [
+      {
+        id: 'adapter-import',
+        label: 'Imports a Payload email adapter',
+        failureHint: "import { nodemailerAdapter } from '@payloadcms/email-nodemailer'",
+      },
+      {
+        id: 'email-config',
+        label: 'Assigns the adapter to buildConfig.email',
+        failureHint: 'Add an email property to buildConfig.',
+      },
+      {
+        id: 'default-from',
+        label: 'Sets a defaultFromAddress',
+        failureHint: "Set defaultFromAddress: 'no-reply@example.com'.",
+      },
+    ],
+  },
+
+  plugins: {
+    starterCode: `import type { Config } from 'payload'
+
+// Write a plugin that injects a computed readingTime field
+export const readingTimePlugin = (config: Config) => config
+`,
+    solutionCode: `import type { Config } from 'payload'
+
+export const readingTimePlugin = (config) => ({
+  ...config,
+  fields: [...config.fields, { name: 'readingTime', type: 'number' }],
+})
+`,
+    testCases: [
+      {
+        id: 'plugin-fn',
+        label: 'Defines a plugin function that accepts a config',
+        failureHint: 'Export readingTimePlugin as a function taking config.',
+      },
+      {
+        id: 'injects-field',
+        label: 'Injects a readingTime field',
+        failureHint: 'Append a readingTime field to config.fields.',
+      },
+      {
+        id: 'spreads-config',
+        label: 'Spreads ...config to preserve existing options',
+        failureHint: 'Return { ...config, fields: [...] }.',
+      },
+    ],
+  },
+
+  tenants: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Tenants: CollectionConfig = {
+  slug: 'tenants',
+  fields: [
+    { name: 'name', type: 'text', required: true },
+  ],
+}
+
+// Scope queries to the active tenant
+export const tenantScoped = () => true
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Tenants: CollectionConfig = {
+  slug: 'tenants',
+  fields: [
+    { name: 'name', type: 'text', required: true },
+    { name: 'domain', type: 'text', required: true },
+  ],
+}
+
+export const tenantScoped = ({ req: { user } }) => {
+  if (!user) return false
+  return { tenant: { equals: user.tenant } }
+}
+`,
+    testCases: [
+      {
+        id: 'collection',
+        label: "Declares a 'tenants' collection",
+        failureHint: "Add a collection with slug: 'tenants'.",
+      },
+      {
+        id: 'scoped-access',
+        label: 'Scopes access by the current user tenant',
+        failureHint: 'Return a tenant constraint based on user.tenant.',
+      },
+    ],
+  },
+
+  ai: {
+    starterCode: `export async function embedOnPublish({ doc }) {
+  // Generate an embedding and attach it to the document
+  return doc
+}
+`,
+    solutionCode: `export async function embedOnPublish({ doc }) {
+  const res = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: { Authorization: \`Bearer \${process.env.OPENAI_API_KEY}\` },
+    body: JSON.stringify({ input: doc.title }),
+  })
+  const { data } = await res.json()
+  doc.embedding = data[0].embedding
+  return doc
+}
+`,
+    testCases: [
+      {
+        id: 'embeddings-fetch',
+        label: 'Requests an embedding from the provider',
+        failureHint: 'fetch(...) the embeddings endpoint inside embedOnPublish.',
+      },
+      {
+        id: 'openai-key',
+        label: 'Reads the API key from the environment',
+        failureHint: 'Reference process.env.OPENAI_API_KEY.',
+      },
+      {
+        id: 'returns-doc',
+        label: 'Attaches the embedding and returns the doc',
+        failureHint: 'Set doc.embedding and return doc.',
+      },
+    ],
+  },
+
+  testing: {
+    starterCode: `// Write an integration test for the posts collection
+`,
+    solutionCode: `import { describe, it, expect, beforeEach } from 'vitest'
+import { getPayload } from 'payload'
+import config from '@payload-config'
+
+let payload
+
+beforeEach(async () => {
+  payload = await getPayload({ config })
+})
+
+describe('posts', () => {
+  it('creates a post', async () => {
+    const post = await payload.create({ collection: 'posts', data: { title: 'Hi' } })
+    expect(post.title).toBe('Hi')
+  })
+})
+`,
+    testCases: [
+      {
+        id: 'vitest-import',
+        label: 'Imports the test runner from vitest',
+        failureHint: "import { describe, it, expect } from 'vitest'",
+      },
+      {
+        id: 'uses-expect',
+        label: 'Asserts behaviour with expect(...)',
+        failureHint: 'Add an expect(...) assertion.',
+      },
+      {
+        id: 'boots-payload',
+        label: 'Boots Payload via getPayload() in setup',
+        failureHint: 'Call getPayload({ config }) in beforeEach.',
+      },
+    ],
+  },
+
+  database: {
+    starterCode: `import type { MigrateUpArgs, MigrateDownArgs } from '@payloadcms/db-postgres'
+
+export async function up({ db }: MigrateUpArgs): Promise<void> {
+  // Create the products table
+}
+
+export async function down({ db }: MigrateDownArgs): Promise<void> {
+  // Drop the products table
+}
+`,
+    solutionCode: `import type { MigrateUpArgs, MigrateDownArgs } from '@payloadcms/db-postgres'
+import { sql } from '@payloadcms/db-postgres'
+
+export async function up({ db }: MigrateUpArgs): Promise<void> {
+  await db.execute(sql\`CREATE TABLE products (id serial primary key, title varchar)\`)
+}
+
+export async function down({ db }: MigrateDownArgs): Promise<void> {
+  await db.execute(sql\`DROP TABLE products\`)
+}
+`,
+    testCases: [
+      {
+        id: 'migration-import',
+        label: 'Imports migration types from the postgres adapter',
+        failureHint: "import ... from '@payloadcms/db-postgres'",
+      },
+      {
+        id: 'up-down',
+        label: 'Exports both up() and down() migration functions',
+        failureHint: 'export async function up(...) and export async function down(...).',
+      },
+      {
+        id: 'create-table',
+        label: 'Executes a CREATE TABLE statement',
+        failureHint: 'Call db.execute(...) with a CREATE TABLE statement.',
+      },
+    ],
+  },
+
+  esm: {
+    starterCode: `const nextConfig = {
+  // Add Turbopack config and wrap with withPayload
+}
+
+export default nextConfig
+`,
+    solutionCode: `import { withPayload } from '@payloadcms/next/withPayload'
+
+const nextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
+}
+
+export default withPayload(nextConfig)
+`,
+    testCases: [
+      {
+        id: 'with-payload',
+        label: 'Wraps the config with withPayload()',
+        failureHint: 'export default withPayload(nextConfig).',
+      },
+      {
+        id: 'turbopack-config',
+        label: 'Declares a turbopack config object',
+        failureHint: 'Add a turbopack: { ... } block to nextConfig.',
+      },
+    ],
+  },
+
+  caching: {
+    starterCode: `import type { CollectionAfterChangeHook } from 'payload'
+
+// Revalidate cached content when a post changes
+export const revalidatePost: CollectionAfterChangeHook = async ({ doc }) => {
+  return doc
+}
+`,
+    solutionCode: `import { revalidateTag } from 'next/cache'
+import type { CollectionAfterChangeHook } from 'payload'
+
+export const revalidatePost: CollectionAfterChangeHook = async ({ doc }) => {
+  revalidateTag('posts')
+  revalidateTag(\`post-\${doc.slug}\`)
+  return doc
+}
+`,
+    testCases: [
+      {
+        id: 'revalidate-import',
+        label: 'Imports revalidateTag from next/cache',
+        failureHint: "import { revalidateTag } from 'next/cache'",
+      },
+      {
+        id: 'revalidate-call',
+        label: 'Invalidates a cache tag on change',
+        failureHint: "Call revalidateTag('posts').",
+      },
+      {
+        id: 'returns-doc',
+        label: 'Returns the doc so the hook chain continues',
+        failureHint: 'Return doc at the end of the hook.',
+      },
+    ],
+  },
+
+  deploy: {
+    starterCode: `// Describe the production build for Vercel
+export const vercelBuild = {
+  buildCommand: 'next build',
+  framework: 'nextjs',
+}
+`,
+    solutionCode: `export const vercelBuild = {
+  buildCommand: 'payload migrate && next build',
+  framework: 'nextjs',
+  regions: ['iad1'],
+}
+`,
+    testCases: [
+      {
+        id: 'migrate-build',
+        label: 'Runs payload migrate as part of the build command',
+        failureHint: "Set buildCommand to include 'payload migrate'.",
+      },
+      {
+        id: 'framework-next',
+        label: "Declares the nextjs framework",
+        failureHint: "Set framework: 'nextjs'.",
+      },
+    ],
+  },
+
+  next: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    { name: 'title', type: 'text' },
+    { name: 'slug', type: 'text' },
+  ],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  access: {
+    read: () => true,
+  },
+  fields: [
+    { name: 'title', type: 'text', index: true },
+    { name: 'slug', type: 'text', unique: true },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'access-controls',
+        label: 'Defines an access control block on the collection',
+        failureHint: 'Add access: { read: ... } to the posts collection.',
+      },
+      {
+        id: 'unique-slug',
+        label: 'Marks the slug field as unique',
+        failureHint: "Set unique: true on the slug field.",
+      },
+      {
+        id: 'indexed-title',
+        label: 'Indexes the title field for query speed',
+        failureHint: "Set index: true on the title field.",
+      },
+    ],
+  },
+
+  proj1: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    { name: 'title', type: 'text' },
+  ],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  versions: { drafts: true },
+  fields: [
+    { name: 'title', type: 'text' },
+    { name: 'author', type: 'relationship', relationTo: 'users' },
+    { name: 'coverImage', type: 'upload', relationTo: 'media' },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'posts-slug',
+        label: "Defines the 'posts' collection",
+        failureHint: "Add slug: 'posts'.",
+      },
+      {
+        id: 'drafts',
+        label: 'Enables drafts for the posts collection',
+        failureHint: 'Add versions: { drafts: true }.',
+      },
+      {
+        id: 'relation-and-upload',
+        label: 'Adds both a relationship and an upload field',
+        failureHint: "Include a type: 'relationship' and a type: 'upload' field.",
+      },
+    ],
+  },
+
+  proj2: {
+    starterCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export default async function PostPage({ params }) {
+  const payload = await getPayload({ config })
+  // Fetch the post by slug and render metadata
+  return null
+}
+`,
+    solutionCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+import { notFound } from 'next/navigation'
+
+export async function generateMetadata({ params }) {
+  const payload = await getPayload({ config })
+  const { docs } = await payload.find({
+    collection: 'posts',
+    where: { slug: { equals: params.slug } },
+  })
+  if (!docs.length) {
+    notFound()
+  }
+  return { title: docs[0].title }
+}
+`,
+    testCases: [
+      {
+        id: 'metadata',
+        label: 'Exports generateMetadata for the post route',
+        failureHint: 'export async function generateMetadata(...).',
+      },
+      {
+        id: 'fetch-by-slug',
+        label: 'Fetches the post where slug equals the route param',
+        failureHint: 'payload.find({ collection: "posts", where: { slug: { equals: params.slug } } }).',
+      },
+      {
+        id: 'not-found',
+        label: 'Calls notFound() when the post is missing',
+        failureHint: 'Import and call notFound() from next/navigation.',
+      },
+    ],
+  },
+
+  capstone: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Capstone: CollectionConfig = {
+  slug: 'capstone',
+  fields: [
+    { name: 'title', type: 'text' },
+  ],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Capstone: CollectionConfig = {
+  slug: 'capstone',
+  versions: { drafts: true },
+  access: { read: () => true },
+  fields: [
+    { name: 'title', type: 'text' },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'slug',
+        label: "Defines the 'capstone' collection",
+        failureHint: "Add slug: 'capstone'.",
+      },
+      {
+        id: 'drafts',
+        label: 'Enables versioned drafts',
+        failureHint: 'Add versions: { drafts: true }.',
+      },
+      {
+        id: 'access',
+        label: 'Defines an access control block',
+        failureHint: 'Add an access object to the collection.',
+      },
+    ],
+  },
+
+  ecomm1: {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Products: CollectionConfig = {
+  slug: 'products',
+  fields: [
+    { name: 'title', type: 'text' },
+  ],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Products: CollectionConfig = {
+  slug: 'products',
+  fields: [
+    { name: 'title', type: 'text' },
+    { name: 'price', type: 'number' },
+    { name: 'stock', type: 'number', defaultValue: 0 },
+  ],
+}
+
+export const Orders: CollectionConfig = {
+  slug: 'orders',
+  fields: [
+    { name: 'customerEmail', type: 'email' },
+    {
+      name: 'items',
+      type: 'array',
+      fields: [
+        { name: 'product', type: 'relationship', relationTo: 'products' },
+        { name: 'quantity', type: 'number' },
+      ],
+    },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'products-stock',
+        label: 'Adds a stock field to products',
+        failureHint: "Add { name: 'stock', type: 'number' }.",
+      },
+      {
+        id: 'orders-collection',
+        label: "Defines an 'orders' collection",
+        failureHint: "Add a collection with slug: 'orders'.",
+      },
+      {
+        id: 'orders-items-array',
+        label: "Models order line items as an 'items' array",
+        failureHint: "Add { name: 'items', type: 'array', fields: [...] }.",
+      },
+    ],
+  },
+
+  ecomm2: {
+    starterCode: `import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
+
+export async function handleWebhook(req, payload) {
+  // Verify the Stripe signature and fulfil the order
+  return null
+}
+`,
+    solutionCode: `import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
+
+export async function handleWebhook(req, payload) {
+  const event = stripe.webhooks.constructEvent(
+    req.body,
+    req.headers['stripe-signature'],
+    process.env.STRIPE_WEBHOOK_SECRET || '',
+  )
+
+  if (event.type === 'checkout.session.completed') {
+    await payload.update({
+      collection: 'orders',
+      id: event.data.object.id,
+      data: { status: 'paid' },
+    })
+  }
+
+  return event
+}
+`,
+    testCases: [
+      {
+        id: 'stripe-import',
+        label: 'Imports the Stripe SDK',
+        failureHint: "import Stripe from 'stripe'",
+      },
+      {
+        id: 'construct-event',
+        label: 'Verifies the webhook signature with constructEvent',
+        failureHint: 'Call stripe.webhooks.constructEvent(body, sig, secret).',
+      },
+      {
+        id: 'fulfills-order',
+        label: "Marks the matching 'orders' document as paid",
+        failureHint: "payload.update({ collection: 'orders', id, data: { status: 'paid' } }).",
+      },
+    ],
+  },
 };
+
 
 // Generic Fallback generator for lessons without dedicated manual spec
 export function getChallengeSpec(lessonId: string): LessonChallengeSpec {
@@ -464,19 +2081,16 @@ export const CustomConfig: CollectionConfig = {
       {
         id: 'valid-slug',
         label: `Declares collection slug matching "${lessonId}"`,
-        test: (c) => c.includes(`slug: '${lessonId}'`) || c.includes(`slug: "${lessonId}"`),
         failureHint: `Set slug: '${lessonId}' in your config.`,
       },
       {
         id: 'fields-array',
         label: 'Defines valid fields array with required name and type',
-        test: (c) => c.includes('fields:') && c.includes('type:'),
         failureHint: "Ensure you have a fields array containing { name: '...', type: '...' }",
       },
       {
         id: 'use-as-title',
         label: 'Configures admin.useAsTitle property',
-        test: (c) => c.includes('useAsTitle:'),
         failureHint: "Configure admin: { useAsTitle: 'title' }",
       },
     ],

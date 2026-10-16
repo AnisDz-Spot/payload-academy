@@ -15,7 +15,7 @@ export default function LivePreviewSimulatorPage() {
 
   // Document state in simulated Payload Admin editor
   const [doc, setDoc] = useState({
-    title: 'Announcing Next.js 15 + Payload 3.x Live Preview',
+    title: 'Announcing Next.js 16 + Payload 3.x Live Preview',
     tagline: 'Instant bi-directional preview synchronization with zero page reload latency.',
     category: 'Engineering',
     status: 'draft',
@@ -65,7 +65,7 @@ export default function LivePreviewSimulatorPage() {
           </Link>
           <div className="logo-small">
             <i>P</i>
-            <span>Live Preview &amp; PostMessage Studio</span>
+            <span>Live Preview Simulator</span>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <Link href="/schema-builder" className="t">
@@ -83,10 +83,10 @@ export default function LivePreviewSimulatorPage() {
 
       <main className="standalone-main">
         <div className="wrap" style={{ maxWidth: 1400 }}>
-          <div className="kick">Real-Time Synchronization Engine</div>
+          <div className="kick">Preview Synchronization Simulator</div>
           <h1>Payload 3.x Live Preview &amp; Iframe Sync Simulator</h1>
           <p className="lead">
-            Experience real-time bi-directional content staging between the Payload Admin panel and a Next.js 15 App Router frontend powered by <code>window.postMessage</code> and <code>useLivePreview()</code>.
+            Explore how the Live Preview feature keeps the admin panel and a Next.js 16 App Router frontend in sync via <code>window.postMessage</code> and <code>useLivePreview()</code>. This page is a self-contained simulation — no WebSocket or server connection is involved.
           </p>
 
           {/* Viewport & Device Toggles */}
@@ -115,7 +115,7 @@ export default function LivePreviewSimulatorPage() {
 
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <span className="status-badge in-progress" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.3)' }}>
-                ● Live WebSocket / postMessage Active
+                ● Simulated preview · client-side state
               </span>
             </div>
           </div>
@@ -225,7 +225,7 @@ export default function LivePreviewSimulatorPage() {
               {/* Event Stream Log */}
               <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
-                  📡 postMessage Event Stream
+                  📡 Simulated Event Log
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 150, overflowY: 'auto' }}>
                   {messages.map((m) => (
@@ -349,7 +349,7 @@ export default function LivePreviewSimulatorPage() {
               {/* Code Snippet Info */}
               <div className="panel-card" style={{ width: '100%', marginTop: 20 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }}>
-                  Next.js 15 Client Component Integration:
+                  Next.js 16 Client Component Integration:
                 </div>
                 <div className="cb" style={{ margin: 0 }}>
                   <div className="fn">src/app/(frontend)/blog/[slug]/page.tsx</div>

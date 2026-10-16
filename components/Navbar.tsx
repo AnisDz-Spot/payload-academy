@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAcademy } from '@/context/AcademyContext';
 import { LESSONS } from '@/data/lessons';
@@ -16,10 +17,14 @@ import {
   BookText,
   Award,
   Sparkles,
+  Home,
+  Layers,
 } from 'lucide-react';
 
 const DOCK_ITEMS: FloatingDockItem[] = [
+  { title: 'Home', href: '/start', icon: <Home size={20} strokeWidth={1.8} /> },
   { title: 'Course', href: '/', icon: <BookOpen size={20} strokeWidth={1.8} /> },
+  { title: 'Lessons', href: '/lessons', icon: <Layers size={20} strokeWidth={1.8} /> },
   { title: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={20} strokeWidth={1.8} /> },
   { title: 'Pricing', href: '/pricing', icon: <CreditCard size={20} strokeWidth={1.8} /> },
   { title: 'Schema Studio', href: '/schema-builder', icon: <Database size={20} strokeWidth={1.8} /> },
@@ -103,7 +108,7 @@ export const Navbar: React.FC = () => {
             </button>
 
             <Link href="/" className="navbar-brand">
-              <div className="navbar-logo-icon">P</div>
+              <Image src="/logo-mark.svg" alt="Payload Academy" width={28} height={28} unoptimized className="navbar-logo-icon" />
               <div className="navbar-brand-info">
                 <span className="navbar-brand-title">Payload Academy</span>
                 <span className="navbar-brand-tag">v3.x</span>
@@ -355,6 +360,30 @@ export const Navbar: React.FC = () => {
                   <div>
                     <div className="dropdown-label">Study Guide</div>
                     <div className="dropdown-sub">Certification cheatsheet</div>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/lessons"
+                  className="navbar-dropdown-item"
+                  onClick={() => setToolsDropdownOpen(false)}
+                >
+                  <span className="dropdown-icon">🗂️</span>
+                  <div>
+                    <div className="dropdown-label">Lesson Library</div>
+                    <div className="dropdown-sub">Index of all 50 lessons</div>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/flashcards"
+                  className="navbar-dropdown-item"
+                  onClick={() => setToolsDropdownOpen(false)}
+                >
+                  <span className="dropdown-icon">🃏</span>
+                  <div>
+                    <div className="dropdown-label">Glossary Flashcards</div>
+                    <div className="dropdown-sub">Spaced drilling of key terms</div>
                   </div>
                 </Link>
 

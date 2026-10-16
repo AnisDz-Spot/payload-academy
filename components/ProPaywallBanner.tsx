@@ -9,7 +9,7 @@ export const ProPaywallBanner: React.FC<{ lessonTitle: string; moduleName: strin
   lessonTitle,
   moduleName,
 }) => {
-  const { togglePro, toggleAdmin, isAdmin } = useAcademy();
+  const { togglePro } = useAcademy();
 
   return (
     <div className="relative my-8 overflow-hidden rounded-2xl">

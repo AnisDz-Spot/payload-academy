@@ -2,34 +2,18 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
+import { runQuery, type Where, type WhereOp } from '@/lib/queryEngine';
 
 interface WhereClause {
   field: string;
-  op: 'equals' | 'not_equals' | 'like' | 'in' | 'greater_than' | 'less_than' | 'exists';
+  op: WhereOp;
   val: string;
 }
-
-const MOCK_DATABASE: Record<string, Array<Record<string, unknown>>> = {
-  posts: [
-    { id: 'post_101', title: 'Getting Started with Payload 3.x in Next.js 15', slug: 'getting-started-payload-3', _status: 'published', category: { id: 'cat_1', name: 'Engineering' }, author: { id: 'usr_1', name: 'Alice Chen' }, createdAt: '2026-03-15T10:00:00Z' },
-    { id: 'post_102', title: 'Deep Dive: Drizzle ORM and Postgres Connection Pooling', slug: 'drizzle-postgres-pooling', _status: 'published', category: { id: 'cat_1', name: 'Engineering' }, author: { id: 'usr_2', name: 'Bob Smith' }, createdAt: '2026-03-20T14:30:00Z' },
-    { id: 'post_103', title: 'Upcoming 3.2 Roadmap and Vector Search Support', slug: 'roadmap-vector-search', _status: 'draft', category: { id: 'cat_2', name: 'Announcements' }, author: { id: 'usr_1', name: 'Alice Chen' }, createdAt: '2026-04-01T09:15:00Z' },
-  ],
-  products: [
-    { id: 'prod_1', title: 'Mechanical Keyboard Pro RGB', slug: 'mechanical-keyboard-pro', priceInCents: 14900, inventoryStock: 45, status: 'active', sku: 'KB-RGB-01' },
-    { id: 'prod_2', title: 'Ergonomic Vertical Mouse', slug: 'ergo-vertical-mouse', priceInCents: 7900, inventoryStock: 0, status: 'active', sku: 'MS-VR-02' },
-    { id: 'prod_3', title: 'UltraWide 34-inch Curved Monitor', slug: 'ultrawide-34-monitor', priceInCents: 69900, inventoryStock: 12, status: 'active', sku: 'MN-34-UW' },
-  ],
-  users: [
-    { id: 'usr_1', email: 'alice@acme.com', name: 'Alice Chen', role: 'admin', createdAt: '2026-01-10T08:00:00Z' },
-    { id: 'usr_2', email: 'bob@acme.com', name: 'Bob Smith', role: 'editor', createdAt: '2026-02-14T11:20:00Z' },
-  ],
-};
 
 export default function QuerySimulatorPage() {
   const { toggleTheme } = useAcademy();
   const [collection, setCollection] = useState('posts');
-  const [operation, setOperation] = useState<'find' | 'findByID' | 'create' | 'count'>('find');
+  const [operation, setOperation] = useState<'find' | 'findByID' | 'count'>('find');
   const [sort, setSort] = useState('-createdAt');
   const [limit, setLimit] = useState(10);
   const [depth, setDepth] = useState(1);
@@ -90,21 +74,22 @@ export default function QuerySimulatorPage() {
     outputCode = `// REST Endpoint:\nGET ${url}\n\n// cURL Example:\ncurl -X GET "${url}" \\\n  -H "Authorization: users API-Key YOUR_KEY" \\\n  -H "Content-Type: application/json"`;
   } else if (activeTab === 'graphql') {
     const cap = collection.charAt(0).toUpperCase() + collection.slice(1);
-    outputCode = `query Get${cap} {\n  ${cap}(\n    where: { _status: { equals: published } }\n    sort: "${sort}"\n    limit: ${limit}\n  ) {\n    docs {\n      id\n      title\n      createdAt\n    }\n    totalDocs\n    hasNextPage\n  }\n}`;
+    const gqlWhere = Object.keys(whereObj).length
+      ? JSON.stringify(whereObj).replace(/"([^"]+)":/g, '$1:')
+      : '{}';
+    outputCode = `query Get${cap} {\n  ${cap}(\n    where: ${gqlWhere}\n    sort: "${sort}"\n    limit: ${limit}\n  ) {\n    docs {\n      id\n      title\n      createdAt\n    }\n    totalDocs\n    hasNextPage\n  }\n}`;
   }
 
-  // Simulated DB Response
-  const mockDocs = MOCK_DATABASE[collection] || [];
-  const mockResponse = {
-    docs: mockDocs,
-    totalDocs: mockDocs.length,
-    limit,
-    totalPages: 1,
-    page: 1,
-    pagingCounter: 1,
-    hasPrevPage: false,
-    hasNextPage: false,
-  };
+  // Actually evaluate the query against the in-memory mock dataset, honoring
+  // where operators, sort, limit and depth.
+  const queryResult = runQuery({ collection, where: whereObj as Where, sort, limit, depth });
+
+  const mockResponse =
+    operation === 'find'
+      ? queryResult
+      : operation === 'count'
+        ? { totalDocs: queryResult.totalDocs }
+        : (queryResult.docs[0] ?? null);
 
   const handleCopy = () => {
     const text = activeTab === 'response' ? JSON.stringify(mockResponse, null, 2) : outputCode;
@@ -144,7 +129,7 @@ export default function QuerySimulatorPage() {
           <div className="kick">Interactive Engine</div>
           <h1>Payload Query, REST &amp; Local API Simulator</h1>
           <p className="lead">
-            Build complex database queries visually and inspect their exact execution across Local API (in Server Components), REST endpoints, GraphQL, and live simulated JSON responses.
+            Build complex database queries visually and preview the generated code for the Local API (in Server Components), REST and GraphQL. Filters, sort, limit and depth are evaluated in real time against an in-memory mock dataset so you can see exactly how the query narrows the result set.
           </p>
 
           <div className="standalone-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -171,7 +156,7 @@ export default function QuerySimulatorPage() {
                     <select
                       className="sb-select"
                       value={operation}
-                      onChange={(e) => setOperation(e.target.value as any)}
+                      onChange={(e) => setOperation(e.target.value as 'find' | 'findByID' | 'count')}
                     >
                       <option value="find">payload.find() [Find Multiple]</option>
                       <option value="findByID">payload.findByID() [Find One]</option>
@@ -251,7 +236,7 @@ export default function QuerySimulatorPage() {
                       <select
                         className="sb-select"
                         value={clause.op}
-                        onChange={(e) => handleUpdateClause(idx, { op: e.target.value as any })}
+                        onChange={(e) => handleUpdateClause(idx, { op: e.target.value as WhereClause['op'] })}
                       >
                         <option value="equals">equals</option>
                         <option value="not_equals">not_equals</option>
@@ -280,7 +265,7 @@ export default function QuerySimulatorPage() {
               </div>
             </div>
 
-            {/* Right Column: Generated Code & Live Mock Response */}
+            {/* Right Column: Generated Code & Mock Response */}
             <div className="panel-card" style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div className="sb-tabs">
@@ -306,7 +291,7 @@ export default function QuerySimulatorPage() {
                     className={`sb-tab ${activeTab === 'response' ? 'active' : ''}`}
                     onClick={() => setActiveTab('response')}
                   >
-                    Simulated JSON
+                    Evaluated Result
                   </button>
                 </div>
                 <button className="t" onClick={handleCopy}>

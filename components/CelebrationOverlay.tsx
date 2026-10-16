@@ -67,7 +67,7 @@ export const CelebrationOverlay: React.FC = () => {
 
     const timeout = setTimeout(dismissCelebration, 5500);
     return () => { cancelAnimationFrame(raf); clearTimeout(timeout); };
-  }, [showCelebration, dismissCelebration]);
+  }, [showCelebration, dismissCelebration, soundEnabled]);
 
   if (!showCelebration) return null;
 
