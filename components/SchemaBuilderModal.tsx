@@ -106,10 +106,10 @@ export const SchemaBuilderModal: React.FC = () => {
 
   return (
     <div className="modal-backdrop open" onClick={(e) => { if (e.target === e.currentTarget) setActiveModal('none'); }}>
-      <div className="modal">
-        <div className="modal-head">
+        <div className="modal" role="dialog" aria-modal="true" aria-label="Visual schema studio">
+          <div className="modal-head">
           <h2>⚙️ Payload 3.x Schema Builder</h2>
-          <button className="modal-close" onClick={() => setActiveModal('none')}>&times;</button>
+          <button className="modal-close" aria-label="Close" onClick={() => setActiveModal('none')}>&times;</button>
         </div>
         <div className="modal-body">
           <div className="sb-form">

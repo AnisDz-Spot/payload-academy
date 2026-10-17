@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
 import { CardSpotlight } from '@/components/ui/card-spotlight';
+import { LESSON_COUNT, FREE_LESSON_COUNT, CURRICULUM_MODULE_COUNT } from '@/data/curriculum';
 
 export const ProPaywallBanner: React.FC<{ lessonTitle: string; moduleName: string }> = ({
   lessonTitle,
@@ -31,7 +32,7 @@ export const ProPaywallBanner: React.FC<{ lessonTitle: string; moduleName: strin
         </h2>
 
         <p className="text-sm md:text-base text-gray-300 max-w-xl mx-auto mb-6 leading-relaxed">
-          This lesson is part of the Advanced Payload 3.x Curriculum. Upgrade to a Pro or Lifetime plan to get instant access to all 50 lessons, interactive code sandboxes, and the official certification exam.
+          This lesson is part of the Advanced Payload 3.x Curriculum. Upgrade to a Pro or Lifetime plan to get instant access to all {LESSON_COUNT} lessons, interactive code sandboxes, and the official certification exam.
         </p>
 
         {/* Feature Highlights Grid */}
@@ -39,8 +40,8 @@ export const ProPaywallBanner: React.FC<{ lessonTitle: string; moduleName: strin
           <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
             <span className="text-xl">⚡</span>
             <div>
-              <div className="text-xs font-bold text-white">40 Advanced Lessons</div>
-              <div className="text-[11px] text-gray-400">All 10 Modules Unlocked</div>
+              <div className="text-xs font-bold text-white">{LESSON_COUNT - FREE_LESSON_COUNT} Advanced Lessons</div>
+              <div className="text-[11px] text-gray-400">All {CURRICULUM_MODULE_COUNT} Modules Unlocked</div>
             </div>
           </div>
           <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">

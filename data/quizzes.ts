@@ -1,6 +1,46 @@
 import { Quiz } from './types';
 
 export const QUIZZES: Record<string, Quiz> = {
+  "prereqs": {
+    "question": "Which runtime does Payload 3.x require?",
+    "options": [
+      "Node.js 18 or newer",
+      "Node.js 12",
+      "A serverless-only runtime"
+    ],
+    "correct": 0,
+    "explanation": "Payload 3.x targets modern Node (18+, 20 LTS recommended), plus Bun and Deno."
+  },
+  "quickstart": {
+    "question": "Which Local API method reads documents from a collection?",
+    "options": [
+      "payload.find",
+      "payload.read",
+      "payload.select"
+    ],
+    "correct": 0,
+    "explanation": "payload.find() is the read/query method; payload.create() writes and payload.update() modifies."
+  },
+  "admin-tour": {
+    "question": "Which admin option decides which field represents a document in relationship pickers and breadcrumbs?",
+    "options": [
+      "useAsTitle",
+      "defaultColumns",
+      "group"
+    ],
+    "correct": 0,
+    "explanation": "admin.useAsTitle names the field used as the document's display label."
+  },
+  "dev-loop": {
+    "question": "Which command starts the Next.js dev server with hot reload?",
+    "options": [
+      "next dev",
+      "next build",
+      "next start"
+    ],
+    "correct": 0,
+    "explanation": "next dev runs the development server; next build and next start are for production."
+  },
   "intro": {
     "question": "Which APIs does Payload automatically generate from your config?",
     "options": [

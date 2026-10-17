@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAcademy } from '@/context/AcademyContext';
 import { LESSONS } from '@/data/lessons';
+import { FREE_LESSON_COUNT } from '@/data/curriculum';
 
 import { FloatingDock, FloatingDockItem } from '@/components/ui/floating-dock';
 import {
@@ -188,8 +189,9 @@ export const Navbar: React.FC = () => {
             className="navbar-icon-btn"
             onClick={() => setActiveModal('pomodoro')}
             title="Focus / Pomodoro Timer"
+            aria-label="Focus / Pomodoro timer"
           >
-            <span>🍅</span>
+            <span aria-hidden="true">🍅</span>
           </button>
 
           {/* More Tools Dropdown */}
@@ -198,6 +200,9 @@ export const Navbar: React.FC = () => {
               className={`navbar-icon-btn${toolsDropdownOpen ? ' active' : ''}`}
               onClick={() => setToolsDropdownOpen(p => !p)}
               title="More Developer Tools"
+              aria-label="More developer tools"
+              aria-haspopup="menu"
+              aria-expanded={toolsDropdownOpen}
             >
               <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
                 <circle cx="10" cy="4" r="1.8" />
@@ -315,7 +320,7 @@ export const Navbar: React.FC = () => {
                         {isPro ? 'UNLOCKED' : 'FREE TIER'}
                       </span>
                     </div>
-                    <div className="dropdown-sub">Simulate Pro access (Lessons 11–50)</div>
+                    <div className="dropdown-sub">Simulate Pro access (Lessons {FREE_LESSON_COUNT + 1}–{LESSONS.length})</div>
                   </div>
                 </button>
 
@@ -371,7 +376,31 @@ export const Navbar: React.FC = () => {
                   <span className="dropdown-icon">🗂️</span>
                   <div>
                     <div className="dropdown-label">Lesson Library</div>
-                    <div className="dropdown-sub">Index of all 50 lessons</div>
+                    <div className="dropdown-sub">Index of all {LESSONS.length} lessons</div>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/blog"
+                  className="navbar-dropdown-item"
+                  onClick={() => setToolsDropdownOpen(false)}
+                >
+                  <span className="dropdown-icon">📝</span>
+                  <div>
+                    <div className="dropdown-label">Articles</div>
+                    <div className="dropdown-sub">In-depth Payload 3.x guides</div>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/blog"
+                  className="navbar-dropdown-item"
+                  onClick={() => setToolsDropdownOpen(false)}
+                >
+                  <span className="dropdown-icon">📝</span>
+                  <div>
+                    <div className="dropdown-label">Articles</div>
+                    <div className="dropdown-sub">In-depth Payload 3.x guides</div>
                   </div>
                 </Link>
 
@@ -417,8 +446,9 @@ export const Navbar: React.FC = () => {
             className="navbar-icon-btn"
             onClick={toggleTheme}
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >
-            {theme === 'dark' ? '☀️' : '🌙'}
+            <span aria-hidden="true">{theme === 'dark' ? '☀️' : '🌙'}</span>
           </button>
 
           {/* ── User Account / Auth Button ── */}
@@ -448,6 +478,9 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={() => setUserDropdownOpen(p => !p)}
                 title={user?.email || 'Account'}
+                aria-label={user?.email ? `Account menu for ${user.email}` : 'Account menu'}
+                aria-haspopup="menu"
+                aria-expanded={userDropdownOpen}
                 className="navbar-icon-btn"
                 style={{
                   width: 32,
@@ -463,6 +496,8 @@ export const Navbar: React.FC = () => {
               {/* Sync status dot */}
               <span
                 title={`Sync: ${syncStatus}`}
+                role="status"
+                aria-label={`Sync status: ${syncStatus}`}
                 style={{
                   position: 'absolute',
                   bottom: 0, right: 0,
@@ -526,7 +561,7 @@ export const Navbar: React.FC = () => {
                     <span className="dropdown-icon">⚡</span>
                     <div>
                       <div className="dropdown-label">Upgrade to Pro</div>
-                      <div className="dropdown-sub">Unlock all 50 lessons &amp; certificate</div>
+                      <div className="dropdown-sub">Unlock all {LESSONS.length} lessons &amp; certificate</div>
                     </div>
                   </Link>
 

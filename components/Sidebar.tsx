@@ -51,7 +51,7 @@ export const Sidebar: React.FC = () => {
     <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
       <input
         type="search"
-        placeholder="Search 50 lessons… (/)"
+        placeholder={`Search ${LESSONS.length} lessons… (/)`}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         aria-label="Search lessons"
@@ -105,8 +105,13 @@ export const Sidebar: React.FC = () => {
                   </div>
                 )}
                 <a
+                  href={`/lessons/${lesson.id}`}
                   className={`${isCurrent ? 'act' : ''} ${isDone ? 'done' : ''} ${isLocked ? 'locked-lesson' : ''}`}
-                  onClick={() => setCurrentLessonIndex(index)}
+                  onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    e.preventDefault();
+                    setCurrentLessonIndex(index);
+                  }}
                 >
                   <span className={`d ${isLocked && !isDone ? 'locked' : ''}`} />
                   <span className="lesson-title">{lesson.t}</span>
@@ -163,6 +168,9 @@ export const Sidebar: React.FC = () => {
           </Link>
           <Link href="/lessons" className="sidebar-tool-link">
             <span>🗂️</span> Lesson Library
+          </Link>
+          <Link href="/blog" className="sidebar-tool-link">
+            <span>📝</span> Articles
           </Link>
           <Link href="/glossary" className="sidebar-tool-link">
             <span>📚</span> Glossary

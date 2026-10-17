@@ -1,3 +1,5 @@
+import { LESSON_COUNT, CURRICULUM_MODULE_COUNT } from './curriculum';
+
 export type PlanId = 'free' | 'monthly' | 'annual' | 'lifetime';
 
 export interface Plan {
@@ -34,7 +36,7 @@ export const PLANS: Plan[] = [
       { label: 'Schema Builder & Query Simulator', included: true },
       { label: 'Payload Glossary & Changelog Explorer', included: true },
       { label: 'Community Discord Access', included: true },
-      { label: 'All 50 deep lessons (10 full modules)', included: false },
+      { label: `All ${LESSON_COUNT} deep lessons (${CURRICULUM_MODULE_COUNT} full modules)`, included: false },
       { label: 'Interactive coding challenges with test suites', included: false },
       { label: 'Visual RBAC Matrix & Lexical Inspector', included: false },
       { label: 'Live Preview Simulator & Drizzle Visualizer', included: false },
@@ -54,7 +56,7 @@ export const PLANS: Plan[] = [
     cta: 'Start Pro Monthly ($19/mo)',
     ctaStyle: 'primary',
     features: [
-      { label: 'All 50 deep lessons across 9 modules', included: true },
+      { label: `All ${LESSON_COUNT} deep lessons across ${CURRICULUM_MODULE_COUNT} modules`, included: true },
       { label: 'Guided coding challenges with automated checks', included: true },
       { label: 'Visual RBAC Matrix & RLS Simulator', included: true },
       { label: 'Lexical AST Inspector & React Serializer', included: true },
@@ -87,7 +89,7 @@ export const PLANS: Plan[] = [
       { label: 'Early access to new modules & beta lessons', included: true },
       { label: 'Priority community & GitHub issue support', included: true },
       { label: 'Downloadable Payload Architecture Study Guide (PDF)', included: true },
-      { label: 'All 50 deep lessons across 9 modules', included: true },
+      { label: `All ${LESSON_COUNT} deep lessons across ${CURRICULUM_MODULE_COUNT} modules`, included: true },
       { label: 'Guided coding challenges with automated checks', included: true },
       { label: 'Final Exam & Verified Certificate of Mastery', included: true },
       { label: 'AI Payload Assistant (✨)', included: true },
@@ -115,7 +117,7 @@ export const PLANS: Plan[] = [
       { label: 'All future modules & interactive tools at no extra cost', included: true },
       { label: 'Priority 1-on-1 email & architecture advice', included: true },
       { label: 'Exclusive "Founding Member" Discord badge & private channel', included: true },
-      { label: 'All 50 deep lessons across 9 modules', included: true },
+      { label: `All ${LESSON_COUNT} deep lessons across ${CURRICULUM_MODULE_COUNT} modules`, included: true },
       { label: 'Guided coding challenges with automated checks', included: true },
       { label: 'Final Exam & Verified Certificate of Mastery', included: true },
       { label: 'AI Payload Assistant (✨)', included: true },

@@ -18,6 +18,161 @@ export interface LessonChallengeSpec {
 }
 
 export const CHALLENGE_SPECS: Record<string, LessonChallengeSpec> = {
+  prereqs: {
+    starterCode: `// Describe the runtime requirements Payload 3.x needs.
+// Export a "prerequisites" object with node, packageManager and database keys.
+export const prerequisites = {
+}
+`,
+    solutionCode: `export const prerequisites = {
+  node: '>=18',
+  packageManager: 'pnpm',
+  database: 'postgres',
+}
+`,
+    testCases: [
+      {
+        id: 'node',
+        label: 'Declares a required Node.js version',
+        failureHint: "Add a node key, for example: node: '>=18'.",
+      },
+      {
+        id: 'package-manager',
+        label: 'Names a package manager',
+        failureHint: "Add a packageManager key, for example: 'pnpm'.",
+      },
+      {
+        id: 'database',
+        label: 'Names a supported database',
+        failureHint: "Add a database key, for example: 'postgres'.",
+      },
+    ],
+  },
+
+  quickstart: {
+    starterCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function getLatestPosts() {
+  const payload = await getPayload({ config })
+  // TODO: fetch the 10 newest posts from the 'posts' collection
+  return []
+}
+`,
+    solutionCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+
+export async function getLatestPosts() {
+  const payload = await getPayload({ config })
+  const { docs } = await payload.find({
+    collection: 'posts',
+    limit: 10,
+    sort: '-createdAt',
+  })
+  return docs
+}
+`,
+    testCases: [
+      {
+        id: 'payload-init',
+        label: 'Initializes Payload with getPayload before querying',
+        failureHint: 'Call await getPayload({ config }) first.',
+      },
+      {
+        id: 'find-posts',
+        label: "Queries the 'posts' collection",
+        failureHint: "Call payload.find({ collection: 'posts' }).",
+      },
+      {
+        id: 'limits-results',
+        label: 'Limits the query to 10 results',
+        failureHint: 'Pass limit: 10 to payload.find().',
+      },
+    ],
+  },
+
+  'admin-tour': {
+    starterCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: {
+    // TODO: configure useAsTitle, defaultColumns and group
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'status', type: 'select', options: ['draft', 'published'] },
+  ],
+}
+`,
+    solutionCode: `import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: {
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'status', 'updatedAt'],
+    group: 'Content',
+  },
+  fields: [
+    { name: 'title', type: 'text', required: true },
+    { name: 'status', type: 'select', options: ['draft', 'published'] },
+  ],
+}
+`,
+    testCases: [
+      {
+        id: 'use-as-title',
+        label: 'Sets admin.useAsTitle to a field name',
+        failureHint: "Add useAsTitle: 'title' inside admin.",
+      },
+      {
+        id: 'default-columns',
+        label: 'Defines at least one default column',
+        failureHint: "Add defaultColumns: ['title', 'status', 'updatedAt'].",
+      },
+      {
+        id: 'group',
+        label: 'Assigns the collection to an admin group',
+        failureHint: "Add group: 'Content' inside admin.",
+      },
+    ],
+  },
+
+  'dev-loop': {
+    starterCode: `export const packageJson = {
+  scripts: {
+    // TODO: add "dev", "build" and "generate:types" scripts
+  },
+}
+`,
+    solutionCode: `export const packageJson = {
+  scripts: {
+    dev: 'next dev',
+    build: 'next build',
+    'generate:types': 'payload generate:types',
+  },
+}
+`,
+    testCases: [
+      {
+        id: 'dev-script',
+        label: 'Defines a dev script that runs next dev',
+        failureHint: "Add dev: 'next dev' inside scripts.",
+      },
+      {
+        id: 'build-script',
+        label: 'Defines a build script that runs next build',
+        failureHint: "Add build: 'next build' inside scripts.",
+      },
+      {
+        id: 'generate-types',
+        label: 'Defines a generate:types script',
+        failureHint: "Add 'generate:types': 'payload generate:types' inside scripts.",
+      },
+    ],
+  },
+
   intro: {
     starterCode: `// Explain the primary difference between Payload 3.x and legacy headless CMSs:
 export const payloadAdvantage = {

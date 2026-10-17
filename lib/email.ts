@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import { LESSON_COUNT } from '@/data/curriculum';
 
 // ── Environment config ────────────────────────────────────────────
 const EMAIL_HOST = process.env.EMAIL_HOST || 'smtp.gmail.com';
@@ -121,7 +122,7 @@ function buildVerificationEmailHtml(name: string, verifyUrl: string): string {
                     <div style="font-size:12px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">What you unlock</div>
                     <table cellpadding="0" cellspacing="0" width="100%">
                       ${[
-                        ['📦', '50 Deep-Dive Lessons', 'Payload CMS 3.x + Next.js 16 full-stack'],
+                        ['📦', `${LESSON_COUNT} Deep-Dive Lessons`, 'Payload CMS 3.x + Next.js 16 full-stack'],
                         ['🔥', 'Study Streaks & XP', 'Daily streaks with achievement badges'],
                         ['🏆', 'Pro Certification', 'Holographic cert + LinkedIn credential'],
                       ].map(([icon, title, sub]) => `

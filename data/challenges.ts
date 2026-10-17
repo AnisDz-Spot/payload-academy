@@ -1,6 +1,22 @@
 import { Challenge } from './types';
 
 export const CHALLENGES: Record<string, Challenge> = {
+  "prereqs": {
+    "docsPath": "",
+    "challengeText": "Export a `prerequisites` object describing the runtime Payload 3.x expects (Node version, package manager, database)."
+  },
+  "quickstart": {
+    "docsPath": "getting-started/installation",
+    "challengeText": "Write a server helper that fetches the 10 newest posts from the `posts` collection with the Local API."
+  },
+  "admin-tour": {
+    "docsPath": "admin/overview",
+    "challengeText": "Configure a Posts collection's admin options: useAsTitle, three defaultColumns, and a sidebar group."
+  },
+  "dev-loop": {
+    "docsPath": "getting-started/installation",
+    "challengeText": "Define the `dev`, `build` and `generate:types` scripts in package.json."
+  },
   "intro": {
     "docsPath": "",
     "challengeText": ""

@@ -10,6 +10,8 @@ import { AiAssistantModal } from '@/components/AiAssistantModal';
 import { PomodoroModal } from '@/components/PomodoroModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { AuthModal } from '@/components/AuthModal';
+import { ModalA11y } from '@/components/ModalA11y';
+import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 
 export const Providers: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -25,6 +27,8 @@ export const Providers: React.FC<{ children: React.ReactNode }> = ({ children })
       <PomodoroModal />
       <OnboardingModal />
       <AuthModal />
+      <ModalA11y />
+      <ServiceWorkerRegister />
     </AcademyProvider>
   );
 };

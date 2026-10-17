@@ -52,10 +52,10 @@ export const BackupModal: React.FC = () => {
 
   return (
     <div className="modal-backdrop open" onClick={(e) => { if (e.target === e.currentTarget) setActiveModal('none'); }}>
-      <div className="modal" style={{ maxWidth: 560 }}>
+        <div className="modal" style={{ maxWidth: 560 }} role="dialog" aria-modal="true" aria-label="Backup and restore progress">
         <div className="modal-head">
           <h2>💾 Progress &amp; Notes Backup</h2>
-          <button className="modal-close" onClick={() => setActiveModal('none')}>&times;</button>
+          <button className="modal-close" aria-label="Close" onClick={() => setActiveModal('none')}>&times;</button>
         </div>
         <div className="backup-modal-body">
           <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)' }}>

@@ -257,7 +257,7 @@ export default function CertificatePage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span>{completedLessonsCount >= totalLessons ? '✅' : '○'}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>1. Complete all 50 Curriculum Lessons</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>1. Complete all {totalLessons} Curriculum Lessons</span>
                   </div>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>
                     {completedLessonsCount}/{totalLessons}
@@ -268,7 +268,7 @@ export default function CertificatePage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span>{completedQuizzesCount >= totalLessons ? '✅' : '○'}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>2. Pass all 50 Lesson Quick Quizzes</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>2. Pass all {totalLessons} Lesson Quick Quizzes</span>
                   </div>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>
                     {completedQuizzesCount}/{totalLessons}

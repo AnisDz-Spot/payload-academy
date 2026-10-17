@@ -2,11 +2,11 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LESSONS } from '@/data/lessons';
-import { PAYLOAD_VERIFIED_VERSION, NEXTJS_TARGET, CURRICULUM_MODULE_COUNT } from '@/data/curriculum';
+import { PAYLOAD_VERIFIED_VERSION, NEXTJS_TARGET, CURRICULUM_MODULE_COUNT, LESSON_COUNT } from '@/data/curriculum';
 import { SITE_URL, SITE_NAME, isFreeLesson, lessonDescription } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'All 50 Payload CMS 3.x Lessons — Full Curriculum',
+  title: `All ${LESSON_COUNT} Payload CMS 3.x Lessons — Full Curriculum`,
   description: `Browse the complete ${SITE_NAME} curriculum: ${LESSONS.length} hands-on lessons across ${CURRICULUM_MODULE_COUNT} modules covering collections, fields, access control, hooks, auth, rich text, jobs, plugins, AI, and production deployment with Payload 3.${PAYLOAD_VERIFIED_VERSION.split('.')[1]} and Next.js ${NEXTJS_TARGET}.`,
   alternates: { canonical: `${SITE_URL}/lessons` },
 };

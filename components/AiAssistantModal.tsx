@@ -135,6 +135,9 @@ export const AiAssistantModal: React.FC = () => {
         className="modal-box ai-modal-box"
         style={{ maxWidth: 720, height: '82vh', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}
         onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Payload 3.x AI Assistant"
       >
         {/* Modal Header */}
         <div className="modal-header">
@@ -150,7 +153,7 @@ export const AiAssistantModal: React.FC = () => {
               <div className="modal-sub">Ask questions, generate schema code &amp; troubleshoot Next.js 16</div>
             </div>
           </div>
-          <button className="modal-close" onClick={() => setActiveModal('none')}>✕</button>
+          <button className="modal-close" aria-label="Close" onClick={() => setActiveModal('none')}>✕</button>
         </div>
 
         {/* Message Stream */}

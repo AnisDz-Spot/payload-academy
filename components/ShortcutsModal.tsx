@@ -23,13 +23,16 @@ export const ShortcutsModal: React.FC = () => {
         className="modal-box"
         style={{ maxWidth: 440 }}
         onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Keyboard shortcuts"
       >
         <div className="modal-header">
           <div>
             <div className="modal-title">Keyboard Shortcuts</div>
             <div className="modal-sub">Navigate the academy at the speed of thought</div>
           </div>
-          <button className="modal-close" onClick={() => setActiveModal('none')}>✕</button>
+          <button className="modal-close" aria-label="Close" onClick={() => setActiveModal('none')}>✕</button>
         </div>
 
         <div style={{ padding: '16px 24px 24px' }}>

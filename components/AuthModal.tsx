@@ -123,6 +123,9 @@ export const AuthModal: React.FC = () => {
           exit={{ opacity: 0, scale: 0.95, y: 16 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Payload Academy account"
           style={{
             background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.98) 0%, rgba(10, 15, 29, 0.99) 100%)',
             boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(99, 102, 241, 0.3)',

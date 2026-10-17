@@ -37,6 +37,7 @@ export const CommandPaletteModal: React.FC = () => {
     { id: 'act-tour', title: '✨ Start Student Onboarding Tour', subtitle: 'Action', action: () => setActiveModal('onboarding') },
     { id: 'act-home', title: '🏠 Go to Academy Home', subtitle: 'Navigation', action: () => { router.push('/start'); setActiveModal('none'); } },
     { id: 'act-lessons', title: '🗂️ Browse the Lesson Library', subtitle: 'Navigation', action: () => { router.push('/lessons'); setActiveModal('none'); } },
+    { id: 'act-blog', title: '📝 Read Payload Articles', subtitle: 'Navigation', action: () => { router.push('/blog'); setActiveModal('none'); } },
     { id: 'act-cards', title: '🃏 Study Glossary Flashcards', subtitle: 'Tool', action: () => { router.push('/flashcards'); setActiveModal('none'); } },
     { id: 'act-pricing', title: '💳 View Pricing & Subscribe', subtitle: 'Action', action: () => { router.push('/pricing'); setActiveModal('none'); } },
     { id: 'act-live', title: '🖥️ Open Live Preview & postMessage Studio', subtitle: 'Tool', action: () => { router.push('/live-preview-simulator'); setActiveModal('none'); } },
@@ -105,7 +106,7 @@ export const CommandPaletteModal: React.FC = () => {
 
   return (
     <div className="modal-backdrop open" onClick={(e) => { if (e.target === e.currentTarget) setActiveModal('none'); }}>
-      <div className="cp-modal">
+      <div className="cp-modal" role="dialog" aria-modal="true" aria-label="Command palette">
         <div className="cp-input-wrap">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />

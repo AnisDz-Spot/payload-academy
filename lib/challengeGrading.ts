@@ -515,6 +515,38 @@ const RULES: Record<string, Rule> = {
   'ecomm2:construct-event': (ctx) => findCalls(ctx, (n) => n === 'constructEvent').length > 0,
   'ecomm2:fulfills-order': (ctx) =>
     findCalls(ctx, (n) => n === 'update').some((c) => c.getText(ctx.sourceFile).includes("collection: 'orders'")),
+
+  // ── prereqs ───────────────────────────────────────────────────────────────
+  'prereqs:node': (ctx) => findPropsAnywhere(ctx, 'node').length > 0,
+  'prereqs:package-manager': (ctx) =>
+    findPropsAnywhere(ctx, 'packageManager').length > 0 ||
+    findPropsAnywhere(ctx, 'package-manager').length > 0,
+  'prereqs:database': (ctx) => findPropsAnywhere(ctx, 'database').length > 0,
+
+  // ── quickstart ────────────────────────────────────────────────────────────
+  'quickstart:payload-init': (ctx) =>
+    hasImportFrom(ctx, 'payload') || findCalls(ctx, (n) => n === 'getPayload').length > 0,
+  'quickstart:find-posts': (ctx) =>
+    findCalls(ctx, (n) => n === 'find').some((c) => c.getText(ctx.sourceFile).includes('posts')),
+  'quickstart:limits-results': (ctx) =>
+    findCalls(ctx, (n) => n === 'find').some((c) => /\blimit\b/.test(c.getText(ctx.sourceFile))),
+
+  // ── admin-tour ────────────────────────────────────────────────────────────
+  'admin-tour:use-as-title': (ctx) => firstPropAnywhere(ctx, 'useAsTitle') !== undefined,
+  'admin-tour:default-columns': (ctx) => arrayElements(firstPropAnywhere(ctx, 'defaultColumns')).length > 0,
+  'admin-tour:group': (ctx) => strOf(firstPropAnywhere(ctx, 'group')) !== undefined,
+
+  // ── dev-loop ──────────────────────────────────────────────────────────────
+  'dev-loop:dev-script': (ctx) => {
+    const dev = strOf(getPropExpr(objectLit(firstPropAnywhere(ctx, 'scripts')), 'dev'));
+    return !!dev && dev.includes('next dev');
+  },
+  'dev-loop:build-script': (ctx) => {
+    const build = strOf(getPropExpr(objectLit(firstPropAnywhere(ctx, 'scripts')), 'build'));
+    return !!build && build.includes('next build');
+  },
+  'dev-loop:generate-types': (ctx) =>
+    strOf(getPropExpr(objectLit(firstPropAnywhere(ctx, 'scripts')), 'generate:types')) !== undefined,
 };
 
 // Generic fallback rules for lessons without a dedicated spec, keyed by test id.

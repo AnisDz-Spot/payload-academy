@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAcademy } from '@/context/AcademyContext';
 import { PLANS, type PlanId } from '@/data/plans';
+import { LESSON_COUNT, FREE_LESSON_COUNT } from '@/data/curriculum';
 import { CardContainer, CardBody, CardItem } from '@/components/ui/3d-card';
 import { Spotlight } from '@/components/ui/spotlight';
 import { FlipWords } from '@/components/ui/flip-words';
@@ -84,7 +85,7 @@ export default function PricingPage() {
               </span>
             </h1>
             <div className="lead" style={{ maxWidth: 560, margin: '0 auto 32px', fontSize: '1.1rem' }}>
-              Get full access to all 50 lessons, 10 interactive tools, the final exam, and your{' '}
+              Get full access to all {LESSON_COUNT} lessons, 10 interactive tools, the final exam, and your{' '}
               <FlipWords words={['Official Certificate', 'Production Skills', 'Fullstack Mastery', 'Lifetime Updates']} />
             </div>
 
@@ -467,8 +468,8 @@ function PaymentMethodGrid() {
 // ─── Full Feature Comparison Table ────────────────────────────────────────────
 function ComparisonTable() {
   const rows = [
-    { label: 'Lessons included', values: ['10 (Modules 1–2)', '50 lessons', '50 lessons', '50 lessons'] },
-    { label: 'Interactive code challenges', values: ['2', '✓ All 50', '✓ All 50', '✓ All 50'] },
+    { label: 'Lessons included', values: [`${FREE_LESSON_COUNT} (Modules 1–2)`, `${LESSON_COUNT} lessons`, `${LESSON_COUNT} lessons`, `${LESSON_COUNT} lessons`] },
+    { label: 'Interactive code challenges', values: ['2', `✓ All ${LESSON_COUNT}`, `✓ All ${LESSON_COUNT}`, `✓ All ${LESSON_COUNT}`] },
     { label: 'Schema Builder & Query Simulator', values: ['✓', '✓', '✓', '✓'] },
     { label: 'Visual RBAC Matrix & RLS Simulator', values: ['–', '✓', '✓', '✓'] },
     { label: 'Lexical AST Inspector', values: ['–', '✓', '✓', '✓'] },

@@ -63,13 +63,16 @@ export const PomodoroModal: React.FC = () => {
         className="modal-box"
         style={{ maxWidth: 460, textAlign: 'center' }}
         onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Focus / Pomodoro timer"
       >
         <div className="modal-header">
           <div>
             <div className="modal-title">🍅 Focus / Pomodoro Timer</div>
             <div className="modal-sub">Deep work study sessions for maximum retention</div>
           </div>
-          <button className="modal-close" onClick={() => setActiveModal('none')}>✕</button>
+          <button className="modal-close" aria-label="Close" onClick={() => setActiveModal('none')}>✕</button>
         </div>
 
         <div style={{ padding: '24px 28px 28px' }}>

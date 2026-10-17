@@ -106,7 +106,7 @@ export default function DashboardPage() {
           {!canClaimCertificate && (
             <div className="upgrade-banner">
               <div className="upgrade-banner-text">
-                <strong>🚀 Unlock the Full Payload Academy</strong> — Get all 50 lessons, interactive tools, Final Exam &amp; your Certificate of Mastery.
+                <strong>🚀 Unlock the Full Payload Academy</strong> — Get all {LESSONS.length} lessons, interactive tools, Final Exam &amp; your Certificate of Mastery.
                 Plans from <strong>$19/month</strong> or <strong>$99/year</strong> · 30-day money-back guarantee.
               </div>
               <Link href="/pricing" className="upgrade-banner-cta">
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                   ? `Passed with ${examScore}% (≥ 80%)`
                   : canTakeExam
                   ? 'Ready for Final Exam'
-                  : `${Object.keys(completedQuizzes).length}/50 Quizzes Passed`}
+                  : `${Object.keys(completedQuizzes).length}/${LESSONS.length} Quizzes Passed`}
               </div>
               <div style={{ marginTop: 8 }}>
                 {canClaimCertificate ? (

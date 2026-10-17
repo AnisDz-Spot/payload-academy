@@ -6,6 +6,7 @@
 // fields, so a tampered assertion fails verification.
 
 import type { DbCertificate } from './db';
+import { LESSON_COUNT } from '@/data/curriculum';
 
 export const OPEN_BADGES_CONTEXT = 'https://w3id.org/openbadges/v2';
 
@@ -34,13 +35,11 @@ export function buildBadgeAssertion(cert: DbCertificate): Record<string, unknown
       id: `${base}/api/badges/${cert.id}/badge-class`,
       type: 'BadgeClass',
       name: 'Payload CMS 3.x Certified Developer',
-      description:
-        'Awarded for completing all 50 Payload Academy lessons, passing every quiz, and scoring 80% or higher on the Final Mastery Exam.',
+      description: `Awarded for completing all ${LESSON_COUNT} Payload Academy lessons, passing every quiz, and scoring 80% or higher on the Final Mastery Exam.`,
       image: `${base}/api/og/certificate?id=${encodeURIComponent(cert.id)}&name=${encodeURIComponent(cert.recipientName)}&score=${cert.score}`,
       criteria: {
         id: `${base}/certificate`,
-        narrative:
-          'Complete all 50 lessons, pass every quiz, and score at least 80% on the Final Mastery Exam.',
+        narrative: `Complete all ${LESSON_COUNT} lessons, pass every quiz, and score at least 80% on the Final Mastery Exam.`,
       },
       issuer: {
         id: `${base}/`,

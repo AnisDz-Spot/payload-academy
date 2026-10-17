@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAcademy } from '@/context/AcademyContext';
 import { playPop, playSuccessChime, playToggleClick } from '@/lib/sound';
+import { LESSON_COUNT, CURRICULUM_MODULE_COUNT } from '@/data/curriculum';
 
 interface TourStep {
   id: string;
@@ -26,9 +27,9 @@ const TOUR_STEPS: TourStep[] = [
     icon: '⚡',
     title: 'Master Payload CMS 3.x & Next.js 16',
     subtitle: 'From zero to production-grade architecture',
-    description: 'Explore 50 comprehensive lessons across 10 structured modules covering Collections, Fields, Hooks, Access Control, Lexical Rich Text, AI/RAG integrations, and Server Actions.',
+    description: `Explore ${LESSON_COUNT} comprehensive lessons across ${CURRICULUM_MODULE_COUNT} structured modules covering Collections, Fields, Hooks, Access Control, Lexical Rich Text, AI/RAG integrations, and Server Actions.`,
     highlights: [
-      { icon: '📦', title: '50 Deep-Dive Lessons', desc: 'Real-world production schemas, Next.js 16 App Router patterns, and full-stack architecture.' },
+      { icon: '📦', title: `${LESSON_COUNT} Deep-Dive Lessons`, desc: 'Real-world production schemas, Next.js 16 App Router patterns, and full-stack architecture.' },
       { icon: '🛡️', title: 'Zero to Pro Mastery', desc: 'Granular field & collection access control, custom hooks, and safe database transactions.' },
       { icon: '🚀', title: 'Modern Stack', desc: 'TypeScript, PostgreSQL / SQLite / MongoDB adapters, and S3 / Cloudflare R2 storage.' }
     ]
@@ -168,6 +169,9 @@ export const OnboardingModal: React.FC = () => {
           exit={{ opacity: 0, scale: 0.94, y: 16 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
           className="relative w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Student onboarding tour"
           style={{
             background: 'linear-gradient(135deg, rgba(18, 20, 29, 0.97) 0%, rgba(10, 11, 16, 0.99) 100%)',
             boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(99, 102, 241, 0.25)'

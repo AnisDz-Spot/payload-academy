@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
 import { LESSONS } from '@/data/lessons';
 import { QUIZZES } from '@/data/quizzes';
+import { CURRICULUM_MODULE_COUNT } from '@/data/curriculum';
 
 export default function FinalExamPage() {
   const {
@@ -49,7 +50,7 @@ export default function FinalExamPage() {
               <h1 style={{ margin: '8px 0 12px' }}>Final Mastery Exam Locked</h1>
               <p style={{ color: 'var(--muted)', fontSize: 15, maxWidth: 540, margin: '0 auto 28px', lineHeight: 1.6 }}>
                 The Final Comprehensive Exam tests your mastery of the entire Payload 3.x architecture.
-                To qualify for the exam, you must complete all 50 curriculum lessons and pass their quick-check quizzes.
+                To qualify for the exam, you must complete all {lessonsCount} curriculum lessons and pass their quick-check quizzes.
               </p>
 
               {/* Progress Checklist */}
@@ -165,7 +166,7 @@ export default function FinalExamPage() {
                 {finalScore}%
               </div>
               <p style={{ color: 'var(--muted)', fontSize: 15, margin: '8px 0 20px' }}>
-                You scored <b>{correctCount}</b> out of <b>{LESSONS.length}</b> points across all 10 modules.
+                You scored <b>{correctCount}</b> out of <b>{LESSONS.length}</b> points across all {CURRICULUM_MODULE_COUNT} modules.
                 {passed ? ' You met the 80% passing threshold for certification!' : ' The minimum passing score for certification is 80%.'}
               </p>
 
@@ -269,7 +270,7 @@ export default function FinalExamPage() {
           <Link href="/" className="back-link">← Back to Course</Link>
           <div className="logo-small">
             <i>P</i>
-            <span>Mastery Assessment ({currentIndex + 1}/50)</span>
+                <span>Mastery Assessment ({currentIndex + 1}/{lessonsCount})</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <Link href="/query-simulator" className="t">🧪 Query Simulator</Link>

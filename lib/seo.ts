@@ -3,6 +3,13 @@
 // Small, dependency-free helpers shared by the indexable lesson routes,
 // sitemap and structured-data generation. Server-only.
 
+import { FREE_LESSON_COUNT } from '@/data/curriculum';
+
+// Lessons at index >= FREE_LESSON_COUNT are part of the Pro tier. Their public
+// pages stay indexable but only expose a preview outline rather than the full
+// paid body.
+export { FREE_LESSON_COUNT };
+
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ||
   process.env.APP_URL ||
@@ -10,11 +17,6 @@ export const SITE_URL = (
 ).replace(/\/$/, '');
 
 export const SITE_NAME = 'Payload Academy';
-
-// Lessons at index >= FREE_LESSON_COUNT are part of the Pro tier. Their public
-// pages stay indexable but only expose a preview outline rather than the full
-// paid body.
-export const FREE_LESSON_COUNT = 10;
 
 export function isFreeLesson(index: number): boolean {
   return index < FREE_LESSON_COUNT;

@@ -1,3 +1,5 @@
+import { LESSON_COUNT, CURRICULUM_MODULE_COUNT } from './curriculum';
+
 export interface Achievement {
   id: string;
   title: string;
@@ -101,27 +103,27 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'curriculum_complete',
     title: 'Curriculum Master',
-    description: 'Complete all 50 lessons across all 9 modules.',
+    description: `Complete all ${LESSON_COUNT} lessons across all ${CURRICULUM_MODULE_COUNT} modules.`,
     icon: '🎓',
     category: 'progress',
     rarity: 'epic',
     xp: 500,
-    condition: ({ completedLessonsCount }) => completedLessonsCount >= 50,
+    condition: ({ completedLessonsCount }) => completedLessonsCount >= LESSON_COUNT,
   },
   {
     id: 'quiz_perfectionist',
     title: 'Quiz Perfectionist',
-    description: 'Ace all 50 lesson quizzes throughout the academy.',
+    description: `Ace all ${LESSON_COUNT} lesson quizzes throughout the academy.`,
     icon: '💎',
     category: 'mastery',
     rarity: 'epic',
     xp: 600,
-    condition: ({ completedQuizzesCount }) => completedQuizzesCount >= 50,
+    condition: ({ completedQuizzesCount }) => completedQuizzesCount >= LESSON_COUNT,
   },
   {
     id: 'exam_certified',
     title: 'Certified Payload 3.x Master',
-    description: 'Pass the 50-Question Master Certification Exam with ≥ 80%.',
+    description: `Pass the ${LESSON_COUNT}-Question Master Certification Exam with ≥ 80%.`,
     icon: '🏆',
     category: 'exam',
     rarity: 'legendary',
