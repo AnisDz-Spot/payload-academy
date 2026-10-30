@@ -112,27 +112,49 @@ export const LessonView: React.FC = () => {
       b.appendChild(btn);
     });
 
-    // Syntax highlighting
+    // Syntax highlighting.
+    //
+    // Tokenize the decoded text in ONE pass. The previous implementation ran a
+    // series of regex replacements over `block.innerHTML`, so each pass would
+    // re-match the markup emitted by the pass before it and mangle the output
+    // (highlight class names ended up inside the visible code). Reading
+    // `textContent`, escaping it once and running a single combined regex makes
+    // that impossible.
+    const keywords = ['import', 'from', 'export', 'default', 'const', 'let', 'var', 'async', 'await', 'function', 'return', 'if', 'else', 'throw', 'new', 'try', 'catch', 'typeof', 'interface', 'type', 'extends', 'implements', 'as'];
+    const types = ['CollectionConfig', 'GlobalConfig', 'CollectionAfterChangeHook', 'CollectionBeforeChangeHook', 'CollectionBeforeValidateHook', 'PayloadHandler', 'PayloadRequest', 'Payload', 'PaginatedDocs', 'NextConfig', 'Plugin', 'Metadata', 'string', 'number', 'boolean', 'Promise', 'Response'];
+    const bools = ['true', 'false', 'null', 'undefined'];
+    const token = new RegExp(
+      [
+        '\\/\\/[^\\n]*',                        // line comment
+        "'(?:[^'\\\\\\n]|\\\\.)*'",             // single-quoted string
+        '"(?:[^"\\\\\\n]|\\\\.)*"',             // double-quoted string
+        '\\b(?:' + keywords.join('|') + ')\\b', // keyword
+        '\\b(?:' + types.join('|') + ')\\b',    // type
+        '\\b(?:' + bools.join('|') + ')\\b',    // boolean / nullish
+        '\\b\\d+(?:\\.\\d+)?\\b',               // number
+      ].join('|'),
+      'g',
+    );
+    const classify = (match: string): string => {
+      if (match.startsWith('//')) return 'hl-comment';
+      if (match.startsWith("'") || match.startsWith('"')) return 'hl-string';
+      if (keywords.includes(match)) return 'hl-keyword';
+      if (types.includes(match)) return 'hl-type';
+      if (bools.includes(match)) return 'hl-bool';
+      return 'hl-number';
+    };
     const codeTags = articleRef.current.querySelectorAll('pre code');
     codeTags.forEach(block => {
       if ((block as HTMLElement).dataset.hl) return;
       (block as HTMLElement).dataset.hl = '1';
-      let text = block.innerHTML;
-      text = text.replace(/(\/\/[^\n]*)/g, '<span class="hl-comment">$1</span>');
-      text = text.replace(/('(?:[^'\\\n]|\\.)*')/g, '<span class="hl-string">$1</span>');
-      text = text.replace(/("(?:[^"\\\n]|\\.)*")/g, '<span class="hl-string">$1</span>');
-      const keywords = ['import', 'from', 'export', 'default', 'const', 'let', 'var', 'async', 'await', 'function', 'return', 'if', 'else', 'throw', 'new', 'try', 'catch', 'typeof'];
-      keywords.forEach(kw => {
-        const regex = new RegExp('\\b(' + kw + ')\\b', 'g');
-        text = text.replace(regex, '<span class="hl-keyword">' + kw + '</span>');
-      });
-      const types = ['CollectionConfig', 'GlobalConfig', 'CollectionAfterChangeHook', 'CollectionBeforeChangeHook', 'PayloadHandler', 'PayloadRequest', 'Plugin', 'Metadata', 'string', 'number', 'boolean', 'Promise', 'Response'];
-      types.forEach(t => {
-        const regex = new RegExp('\\b(' + t + ')\\b', 'g');
-        text = text.replace(regex, '<span class="hl-type">' + t + '</span>');
-      });
-      text = text.replace(/\b(true|false|null|undefined)\b/g, '<span class="hl-bool">$1</span>');
-      block.innerHTML = text;
+      const escaped = (block.textContent || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      block.innerHTML = escaped.replace(
+        token,
+        (match) => '<span class="' + classify(match) + '">' + match + '</span>',
+      );
     });
   }, [lesson.id]);
 

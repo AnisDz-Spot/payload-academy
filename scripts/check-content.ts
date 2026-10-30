@@ -3,6 +3,7 @@
 // common mojibake. Run in CI via `npm run check:content`.
 import fs from 'node:fs';
 import path from 'node:path';
+import { LESSONS } from '@/data/lessons';
 
 const ROOTS = ['app', 'components', 'data', 'lib', 'scripts', 'tests'];
 const EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.css', '.json', '.md']);
@@ -67,6 +68,19 @@ function main(): void {
           findings.push(`${rel}:${i + 1} [${pattern.name}] ${line.trim().slice(0, 120)}`);
         }
       });
+    }
+  }
+
+  // Lesson code blocks must be plain text. A raw `<Generic>` inside a
+  // `<pre><code>` is parsed as an HTML tag by the browser, so the text silently
+  // disappears from the rendered lesson. Write `&lt;Generic&gt;` instead.
+  for (const lesson of LESSONS) {
+    for (const block of lesson.c.matchAll(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g)) {
+      for (const hit of block[1].matchAll(/<[A-Za-z][^>\n]*>/g)) {
+        findings.push(
+          `data/lessons.ts [${lesson.id}] [unescaped tag-like text in code block] ${hit[0]} — write &lt;${hit[0].slice(1, -1)}&gt;`,
+        );
+      }
     }
   }
 

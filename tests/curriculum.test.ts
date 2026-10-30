@@ -40,6 +40,19 @@ test('lesson ids are unique', () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
+test('lesson code blocks contain no raw HTML tags', () => {
+  for (const lesson of LESSONS) {
+    for (const block of lesson.c.matchAll(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g)) {
+      const raw = [...block[1].matchAll(/<[A-Za-z][^>\n]*>/g)].map((m) => m[0]);
+      assert.deepEqual(
+        raw,
+        [],
+        `lesson "${lesson.id}" has unescaped tag-like text in a code block (write &lt;…&gt;)`,
+      );
+    }
+  }
+});
+
 test('quiz answers point at a real option', () => {
   for (const [id, quiz] of Object.entries(QUIZZES)) {
     assert.ok(quiz.options.length >= 2, `quiz "${id}" has too few options`);
