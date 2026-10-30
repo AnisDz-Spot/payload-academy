@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "check:content": "tsx scripts/check-content.ts",
     "verify:challenges": "tsx scripts/verify-challenges.ts"
   },
   "dependencies": {

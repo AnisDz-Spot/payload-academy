@@ -30,6 +30,9 @@ jobs:
       - name: Verify challenge specs
         run: npm run verify:challenges
 
+      - name: Check for pasted/mangled content
+        run: npm run check:content
+
       - name: Build
         run: npm run build
         env:
