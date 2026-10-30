@@ -10,6 +10,14 @@
  *  - devops: DevOps & Infra focus
  */
 
+export interface Lesson {
+  id: string;
+  t: string;
+  m: string;
+  r: string[];
+  readingMins?: number;
+}
+
 export interface TrackLesson {
   lessonId: string;
   title: string;
@@ -120,7 +128,7 @@ export function getAllTracks(): Array<typeof TRACKS[keyof typeof TRACKS]> {
 /**
  * Get lessons for a specific role tag
  */
-export function getLessonsByRole(role: string, allLessons: any[]): TrackLesson[] {
+export function getLessonsByRole(role: string, allLessons: Lesson[]): TrackLesson[] {
   const lessons: TrackLesson[] = [];
   allLessons.forEach((lesson, index) => {
     if (lesson.r && lesson.r.includes(role)) {
@@ -138,7 +146,7 @@ export function getLessonsByRole(role: string, allLessons: any[]): TrackLesson[]
 /**
  * Calculate a 2-week plan (45 min/day, 10 days)
  */
-export function generateTwoWeekPlan(trackId: string): { days: number; dailyMins: number; lessons: TrackLesson[]; remaining: TrackLesson[] } {
+export function generateTwoWeekPlan(trackId: keyof typeof TRACKS): { days: number; dailyMins: number; lessons: TrackLesson[]; remaining: TrackLesson[] } {
   const track = TRACKS[trackId];
   if (!track) {
     return { days: 0, dailyMins: 0, lessons: [], remaining: [] };
@@ -172,4 +180,3 @@ export function generateTwoWeekPlan(trackId: string): { days: number; dailyMins:
   };
 }
 
-export type { TrackLesson, LearningTrack };

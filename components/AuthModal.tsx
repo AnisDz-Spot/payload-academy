@@ -6,8 +6,6 @@ import { useAcademy } from '@/context/AcademyContext';
 import { playPop, playSuccessChime, playToggleClick } from '@/lib/sound';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 
 const AVATARS = ['👨‍💻', '👩‍💻', '🚀', '⚡', '🛡️', '🧙‍♂️', '🧠', '💎'];
 
