@@ -298,8 +298,9 @@ export default function RbacMatrixPage() {
         granted = false;
         statusCode = 500;
         statusText = '500 Evaluation Error';
-        reason = `Access function threw: ${res.error}`;
-        returned = res.error;
+        const errMsg = (res as { ok: false; error: string }).error;
+        reason = `Access function threw: ${errMsg}`;
+        returned = errMsg;
       } else if (typeof res.value === 'boolean' || res.value === null || res.value === undefined) {
         granted = res.value === true;
         returned = String(res.value);
