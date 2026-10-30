@@ -2198,6 +2198,98 @@ export async function handleWebhook(req, payload) {
       },
     ],
   },
+
+  typescript: {
+    starterCode: `// 1. Fill in the Post interface: id, title and slug (all strings).
+// 2. Return "<title> (/posts/<slug>)" from formatPost.
+export interface Post {
+}
+
+export function formatPost(post: Post): string {
+  return ''
+}
+`,
+    solutionCode: `export interface Post {
+  id: string
+  title: string
+  slug: string
+}
+
+export function formatPost(post: Post): string {
+  return \`\${post.title} (/posts/\${post.slug})\`
+}
+`,
+    testCases: [
+      { id: 'interface-fields', label: 'Declares Post with string id, title and slug', failureHint: 'Add id, title and slug (all string) to the Post interface.' },
+      { id: 'typed-param', label: 'formatPost takes a Post parameter', failureHint: 'Type the parameter as post: Post.' },
+      { id: 'template-output', label: 'Returned string includes the title and slug', failureHint: 'Reference both post.title and post.slug in the return value.' },
+    ],
+  },
+
+  'typed-api': {
+    starterCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+import type { Post } from '@/payload-types'
+
+// Return the 5 newest published posts as Post[].
+export async function latestPosts(): Promise<Post[]> {
+  const payload = await getPayload({ config })
+  return []
+}
+`,
+    solutionCode: `import { getPayload } from 'payload'
+import config from '@payload-config'
+import type { Post } from '@/payload-types'
+
+export async function latestPosts(): Promise<Post[]> {
+  const payload = await getPayload({ config })
+  const { docs } = await payload.find({
+    collection: 'posts',
+    where: { _status: { equals: 'published' } },
+    sort: '-createdAt',
+    limit: 5,
+  })
+  return docs as Post[]
+}
+`,
+    testCases: [
+      { id: 'import-types', label: "Imports Post from '@/payload-types'", failureHint: "Add import type { Post } from '@/payload-types'." },
+      { id: 'find-published', label: "Filters _status equals 'published'", failureHint: "Add where: { _status: { equals: 'published' } }." },
+      { id: 'limit-sort', label: 'Sorts by -createdAt and limits to 5', failureHint: "Add sort: '-createdAt' and limit: 5." },
+      { id: 'typed-return', label: 'Returns Post[]', failureHint: 'Return docs as Post[] and annotate Promise<Post[]>.' },
+    ],
+  },
+
+  validation: {
+    starterCode: `import { z } from 'zod'
+import type { CollectionBeforeValidateHook } from 'payload'
+
+// 1. Require a title of at least 3 characters.
+// 2. Validate data with postSchema in the hook.
+export const postSchema = z.object({})
+
+export const validatePost: CollectionBeforeValidateHook = async ({ data }) => {
+  return data
+}
+`,
+    solutionCode: `import { z } from 'zod'
+import type { CollectionBeforeValidateHook } from 'payload'
+
+export const postSchema = z.object({
+  title: z.string().min(3),
+})
+
+export const validatePost: CollectionBeforeValidateHook = async ({ data }) => {
+  postSchema.parse(data)
+  return data
+}
+`,
+    testCases: [
+      { id: 'schema-shape', label: 'postSchema requires a string title of at least 3 characters', failureHint: 'Use z.object({ title: z.string().min(3) }).' },
+      { id: 'hook-parse', label: 'Calls postSchema.parse(data) in the hook', failureHint: 'Call postSchema.parse(data) inside validatePost.' },
+      { id: 'hook-return', label: 'Returns data from the hook', failureHint: 'Return data at the end of validatePost.' },
+    ],
+  },
 };
 
 

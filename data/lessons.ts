@@ -187,6 +187,33 @@ export const LESSONS: Lesson[] = [
     "readingMins": 4
   },
   {
+    "id": "typescript",
+    "m": "Core Concepts",
+    "t": "TypeScript types that follow your schema",
+    "r": [
+      "all",
+      "backend",
+      "frontend"
+    ],
+    "difficulty": "intermediate",
+    "tags": [
+      "typescript",
+      "types",
+      "generics",
+      "tooling"
+    ],
+    "relatedIds": [
+      "config",
+      "collections",
+      "fields",
+      "typed-api",
+      "cli"
+    ],
+    "readingMins": 6,
+    "verified": "3.90",
+    "c": "<p class='lead'>Payload is designed around TypeScript: your config is the source of truth, and the types are generated from it. Once you lean into that loop, most of the “property does not exist” errors disappear before you ever run the app.</p>\n\n<h2>The generated types file</h2>\n<p>Payload reads your collections and globals and emits a <code>payload-types.ts</code> file. Regenerate it whenever the schema changes:</p>\n<div class='cb'><div class='fn'>terminal</div><pre><code>pnpm generate:types</code></pre></div>\n<p>Import document types instead of re-declaring them by hand:</p>\n<div class='cb'><div class='fn'>src/app/posts/page.tsx</div><pre><code>import type { Post } from '@/payload-types'\n\nexport function PostCard({ post }: { post: Post }) {\n  return &lt;h3&gt;{post.title}&lt;/h3&gt;\n}</code></pre></div>\n\n<h2>Typing the config itself</h2>\n<p>Annotate each collection with <code>CollectionConfig</code> so every field option is checked as you type:</p>\n<div class='cb'><div class='fn'>src/collections/Posts.ts</div><pre><code>import type { CollectionConfig } from 'payload'\n\nexport const Posts: CollectionConfig = {\n  slug: 'posts',\n  fields: [\n    { name: 'title', type: 'text', required: true },\n    { name: 'slug', type: 'text', required: true, unique: true },\n  ],\n}</code></pre></div>\n\n<h2>Typing the Local API</h2>\n<p>For helpers that receive a <code>Payload</code> instance, annotate the parameter once and let the rest flow:</p>\n<div class='cb'><div class='fn'>src/lib/posts.ts</div><pre><code>import type { Payload } from 'payload'\nimport type { Post } from '@/payload-types'\n\nexport async function getPost(payload: Payload, id: string): Promise&lt;Post&gt; {\n  return payload.findByID({ collection: 'posts', id }) as Promise&lt;Post&gt;\n}</code></pre></div>\n\n<h2>Prefer generated types over hand-written ones</h2>\n<ul>\n  <li><strong>Never type a document as <code>any</code>.</strong> Import the generated type; if it is wrong, fix the config and regenerate.</li>\n  <li><strong>Use <code>satisfies</code> for literals</strong> when you want inference without widening: <code>const defaults = { draft: true } satisfies Partial&lt;CollectionConfig&gt;</code>.</li>\n  <li><strong>Run <code>tsc --noEmit</code> in CI</strong> so a schema change that breaks a component fails the build, not production.</li>\n</ul>\n\n<div class='tip'><b>Rule of thumb:</b> if you are writing <code>as unknown as</code>, stop and ask whether the config or the generated types should change instead.</div>\n\n<h2>Your challenge</h2>\n<p>Model a <code>Post</code> interface and a <code>formatPost</code> function that consumes it, so the compiler guarantees every caller has the fields you expect.</p>"
+  },
+  {
     "id": "layout",
     "m": "Core Concepts",
     "t": "Tabs, Groups & Layout Fields",
@@ -295,6 +322,31 @@ export const LESSONS: Lesson[] = [
     ],
     "c": "\n<p class=\"lead\">Hooks are asynchronous lifecycle functions that intercept CRUD operations at precise stages. They can sanitize incoming data, trigger external side effects (emails, webhooks, search indexing), perform Next.js on-demand cache revalidation, or abort transactions by throwing errors.</p>\n\n<h2>Complete Collection Lifecycle Pipeline</h2>\n<div class=\"tbl\"><table>\n  <thead><tr><th>Hook Name</th><th>Timing &amp; Context</th><th>Can Mutate Data?</th></tr></thead>\n  <tbody>\n    <tr><td><code>beforeValidate</code></td><td>Runs before schema type validation</td><td>✅ Yes (Mutates <code>data</code>)</td></tr>\n    <tr><td><code>beforeChange</code></td><td>After validation, before database write</td><td>✅ Yes (Final mutation window)</td></tr>\n    <tr><td><code>afterChange</code></td><td>Immediately after database write/commit</td><td>❌ No (Receives immutable <code>doc</code>)</td></tr>\n    <tr><td><code>beforeRead</code></td><td>Before querying from database</td><td>❌ No</td></tr>\n    <tr><td><code>afterRead</code></td><td>After DB read, before returning to caller</td><td>✅ Yes (Transforms returned JSON)</td></tr>\n    <tr><td><code>beforeDelete</code></td><td>Before document is removed</td><td>❌ No (Can throw error to abort)</td></tr>\n    <tr><td><code>afterDelete</code></td><td>After document deletion completes</td><td>❌ No</td></tr>\n    <tr><td><code>afterOperation</code></td><td>After entire operation (including relations) finishes</td><td>❌ No</td></tr>\n  </tbody>\n</table></div>\n\n<h2>Example 1: Automated Slugs &amp; Reading Time Calculation</h2>\n<div class=\"cb\"><div class=\"fn\">src/hooks/formatPost.ts</div><pre><code>import type { CollectionBeforeChangeHook } from 'payload'\n\nexport const formatPostHook: CollectionBeforeChangeHook = async ({\n  data,\n  operation,\n  req,\n}) => {\n  // 1. Auto-generate URL slug from title\n  if (data?.title && (operation === 'create' || !data.slug)) {\n    data.slug = data.title\n      .toLowerCase()\n      .trim()\n      .replace(/[^a-z0-9]+/g, '-')\n      .replace(/^-+|-+$/g, '')\n  }\n\n  // 2. Compute reading time from richText content\n  if (data?.content) {\n    const rawText = JSON.stringify(data.content)\n    const wordCount = rawText.split(/\\s+/).length\n    data.readingMins = Math.max(1, Math.round(wordCount / 200))\n  }\n\n  return data\n}</code></pre></div>\n\n<h2>Example 2: Next.js On-Demand Cache Invalidation</h2>\n<div class=\"cb\"><div class=\"fn\">src/hooks/revalidatePost.ts</div><pre><code>import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'\nimport { revalidatePath, revalidateTag } from 'next/cache'\n\nexport const revalidatePostAfterChange: CollectionAfterChangeHook = ({\n  doc,\n  previousDoc,\n  req: { payload, context },\n}) => {\n  // Prevent infinite loops during internal bulk operations\n  if (context?.preventRevalidation) return doc\n\n  // If status is published or was published, purge Next.js ISR cache\n  if (doc._status === 'published' || previousDoc?._status === 'published') {\n    revalidatePath('/blog')\n    revalidatePath(`/blog/${doc.slug}`)\n    revalidateTag('posts-collection')\n  }\n\n  return doc\n}</code></pre></div>\n\n<div class=\"tip\">\n  <b>Passing Context:</b> Use the <code>context</code> parameter (e.g. <code>payload.update({ id, data, context: { preventRevalidation: true } })</code>) to pass transient state flags between nested hooks and prevent duplicate external side effects.\n</div>\n",
     "readingMins": 3
+  },
+  {
+    "id": "validation",
+    "m": "Security & Logic",
+    "t": "Runtime validation with Zod in hooks & forms",
+    "r": [
+      "backend",
+      "frontend"
+    ],
+    "difficulty": "intermediate",
+    "tags": [
+      "typescript",
+      "validation",
+      "zod",
+      "hooks"
+    ],
+    "relatedIds": [
+      "hooks",
+      "fields",
+      "actions",
+      "typed-api"
+    ],
+    "readingMins": 5,
+    "verified": "3.90",
+    "c": "<p class='lead'>TypeScript checks your code, not your data. Anything that arrives from a request, a form, a webhook or an import is untrusted at runtime — so validate it before it reaches the database.</p>\n\n<h2>Why types are not enough</h2>\n<p>A <code>Post</code> type tells the compiler what a post should look like. It cannot stop an API caller from sending <code>{ title: 42 }</code>. Runtime validation is the missing half: it turns untrusted input into either a typed value or a clear error.</p>\n\n<h2>A schema with Zod</h2>\n<p>Zod lets you describe the shape once and reuse it in hooks, Server Actions and forms:</p>\n<div class='cb'><div class='fn'>src/lib/schemas.ts</div><pre><code>import { z } from 'zod'\n\nexport const postSchema = z.object({\n  title: z.string().min(3),\n  slug: z.string().regex(/^[a-z0-9-]+$/),\n  published: z.boolean().default(false),\n})\n\nexport type PostInput = z.infer&lt;typeof postSchema&gt;</code></pre></div>\n\n<h2>Validate in a beforeValidate hook</h2>\n<p>Fields you define in <code>payload.config.ts</code> already enforce a lot, but cross-field rules and custom formats belong in a hook. Throw a <code>ValidationError</code> so the admin shows a readable message:</p>\n<div class='cb'><div class='fn'>src/collections/Posts.ts</div><pre><code>import { ValidationError } from 'payload'\nimport type { CollectionBeforeValidateHook } from 'payload'\nimport { postSchema } from '@/lib/schemas'\n\nexport const validatePost: CollectionBeforeValidateHook = async ({ data }) => {\n  const result = postSchema.safeParse(data)\n  if (!result.success) {\n    throw new ValidationError({\n      errors: result.error.issues.map((issue) =&gt; ({\n        path: issue.path.join('.'),\n        message: issue.message,\n      })),\n    })\n  }\n  return data\n}</code></pre></div>\n\n<h2>Share the schema with forms</h2>\n<p>The same object validates client input before it ever hits the network:</p>\n<div class='cb'><div class='fn'>src/components/PostForm.tsx</div><pre><code>const parsed = postSchema.safeParse(formValues)\nif (!parsed.success) {\n  setErrors(parsed.error.flatten().fieldErrors)\n  return\n}\nawait createPost(parsed.data)</code></pre></div>\n\n<div class='tip'><b>parse vs safeParse.</b> Use <code>parse</code> when you want an exception, and <code>safeParse</code> when you want to branch on the result. Never trust a value just because it type-checks.</div>\n\n<h2>Your challenge</h2>\n<p>Define a <code>postSchema</code> that requires a titled string of at least three characters, then validate <code>data</code> inside a <code>beforeValidate</code> hook.</p>"
   },
   {
     "id": "auth",
@@ -486,6 +538,32 @@ export const LESSONS: Lesson[] = [
     ],
     "c": "\n<p class=\"lead\">Payload features a rich, declarative query language for filtering, full-text searching, sorting, and paginating data across all supported database adapters.</p>\n\n<h2>All Supported WHERE Query Operators</h2>\n<div class=\"tbl\"><table>\n  <thead><tr><th>Operator</th><th>SQL Equivalent</th><th>Example Usage</th></tr></thead>\n  <tbody>\n    <tr><td><code>equals</code></td><td><code>=</code></td><td><code>{ status: { equals: 'published' } }</code></td></tr>\n    <tr><td><code>not_equals</code></td><td><code>!=</code></td><td><code>{ role: { not_equals: 'admin' } }</code></td></tr>\n    <tr><td><code>in</code></td><td><code>IN (...)</code></td><td><code>{ category: { in: ['news', 'tech'] } }</code></td></tr>\n    <tr><td><code>not_in</code></td><td><code>NOT IN (...)</code></td><td><code>{ id: { not_in: [1, 2, 3] } }</code></td></tr>\n    <tr><td><code>greater_than</code></td><td><code>&gt;</code></td><td><code>{ price: { greater_than: 50 } }</code></td></tr>\n    <tr><td><code>less_than_equal</code></td><td><code>&lt;=</code></td><td><code>{ stock: { less_than_equal: 0 } }</code></td></tr>\n    <tr><td><code>like</code></td><td><code>ILIKE '%term%'</code></td><td><code>{ title: { like: 'payload' } }</code> (Case-insensitive)</td></tr>\n    <tr><td><code>contains</code></td><td><code>ILIKE '%term%'</code></td><td><code>{ description: { contains: 'framework' } }</code></td></tr>\n    <tr><td><code>exists</code></td><td><code>IS NOT NULL</code></td><td><code>{ publishedAt: { exists: true } }</code></td></tr>\n  </tbody>\n</table></div>\n\n<h2>Complex Compound Queries (AND / OR)</h2>\n<div class=\"cb\"><div class=\"fn\">Compound Query Example</div><pre><code>const activeDeals = await payload.find({\n  collection: 'products',\n  where: {\n    and: [\n      { inStock: { equals: true } },\n      {\n        or: [\n          { onSale: { equals: true } },\n          { price: { less_than: 25 } },\n        ],\n      },\n    ],\n  },\n  sort: '-price', // Sort descending by price\n  limit: 20,\n})</code></pre></div>\n",
     "readingMins": 3
+  },
+  {
+    "id": "typed-api",
+    "m": "Using the Data",
+    "t": "Typed data access: Local API, REST & Server Actions",
+    "r": [
+      "backend",
+      "frontend"
+    ],
+    "difficulty": "intermediate",
+    "tags": [
+      "typescript",
+      "api",
+      "local-api",
+      "server-actions"
+    ],
+    "relatedIds": [
+      "api",
+      "queries",
+      "actions",
+      "typescript",
+      "frontend"
+    ],
+    "readingMins": 6,
+    "verified": "3.90",
+    "c": "<p class='lead'>The same data is available through the Local API, REST and GraphQL, and through Server Actions on the frontend. What should not change is the set of types your code sees. This lesson shows how to keep one typed contract across every surface.</p>\n\n<h2>One source of document types</h2>\n<p>Generated types are the contract. Import them everywhere — server components, route handlers, actions and tests:</p>\n<div class='cb'><div class='fn'>src/payload-types.ts (generated)</div><pre><code>export interface Post {\n  id: string\n  title: string\n  slug: string\n  _status?: 'draft' | 'published'\n}</code></pre></div>\n\n<h2>The Local API keeps the types</h2>\n<p>Inside your Next.js server the Local API is the default. Wrap it in a small typed helper so callers get <code>Post[]</code> rather than <code>unknown[]</code>:</p>\n<div class='cb'><div class='fn'>src/lib/posts.ts</div><pre><code>import { getPayload } from 'payload'\nimport config from '@payload-config'\nimport type { Post } from '@/payload-types'\n\nexport async function latestPosts(): Promise&lt;Post[]&gt; {\n  const payload = await getPayload({ config })\n  const { docs } = await payload.find({\n    collection: 'posts',\n    sort: '-createdAt',\n    limit: 5,\n  })\n  return docs as Post[]\n}</code></pre></div>\n\n<h2>REST responses are untyped at the boundary</h2>\n<p>Over HTTP the compiler cannot see the server, so you assert the shape once, at the edge, and keep the assertion in a single place:</p>\n<div class='cb'><div class='fn'>src/lib/posts-client.ts</div><pre><code>import type { PaginatedDocs } from 'payload'\nimport type { Post } from '@/payload-types'\n\nexport async function fetchPosts(): Promise&lt;Post[]&gt; {\n  const res = await fetch('/api/posts?limit=5')\n  const data = (await res.json()) as PaginatedDocs&lt;Post&gt;\n  return data.docs\n}</code></pre></div>\n\n<h2>Server Actions: typed input, typed output</h2>\n<p>Actions are the safest place to cross the client/server boundary. Type the input, validate it, and return a typed result:</p>\n<div class='cb'><div class='fn'>src/app/actions.ts</div><pre><code>'use server'\n\nimport { getPayload } from 'payload'\nimport config from '@payload-config'\nimport type { Post } from '@/payload-types'\n\nexport async function createPost(input: { title: string; slug: string }): Promise&lt;Post&gt; {\n  const payload = await getPayload({ config })\n  return payload.create({ collection: 'posts', data: input }) as Promise&lt;Post&gt;\n}</code></pre></div>\n\n<div class='tip'><b>Keep assertions at the boundary.</b> One <code>as Post[]</code> in a helper is fine. Sprinkling casts through your components means the types have stopped doing their job.</div>\n\n<h2>Your challenge</h2>\n<p>Write a typed <code>latestPosts()</code> helper that returns the five newest published posts as <code>Post[]</code>.</p>"
   },
   {
     "id": "actions",

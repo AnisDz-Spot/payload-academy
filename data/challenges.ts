@@ -216,5 +216,17 @@ export const CHALLENGES: Record<string, Challenge> = {
   "ecomm2": {
     "docsPath": "",
     "challengeText": "Build the checkout endpoint and Stripe webhook fulfillment handler."
+  },
+  "typescript": {
+    "docsPath": "typescript/overview",
+    "challengeText": "Declare a `Post` interface with string `id`, `title` and `slug`, then implement `formatPost(post: Post)` returning a typed string."
+  },
+  "typed-api": {
+    "docsPath": "local-api/overview",
+    "challengeText": "Write a typed `latestPosts()` helper that returns `Post[]` for the five newest published posts."
+  },
+  "validation": {
+    "docsPath": "hooks/overview",
+    "challengeText": "Define a `postSchema` with Zod (title of at least 3 characters) and validate `data` inside a `beforeValidate` hook."
   }
 };

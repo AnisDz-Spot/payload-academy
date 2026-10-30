@@ -547,6 +547,63 @@ const RULES: Record<string, Rule> = {
   },
   'dev-loop:generate-types': (ctx) =>
     strOf(getPropExpr(objectLit(firstPropAnywhere(ctx, 'scripts')), 'generate:types')) !== undefined,
+
+  // ── typescript ───────────────────────────────────────────────────────────
+  'typescript:interface-fields': (ctx) => {
+    let ok = false;
+    const visit = (node: ts.Node): void => {
+      if (ok) return;
+      if (ts.isInterfaceDeclaration(node) && node.name.text === 'Post') {
+        const types = new Map<string, string>();
+        for (const member of node.members) {
+          if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
+            types.set(member.name.text, member.type ? member.type.getText(ctx.sourceFile) : '');
+          }
+        }
+        ok = ['id', 'title', 'slug'].every((n) => lower(types.get(n)).includes('string'));
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(ctx.sourceFile);
+    return ok;
+  },
+  'typescript:typed-param': (ctx) => {
+    const t = functionDeclText(ctx, 'formatPost');
+    return !!t && /post\s*:\s*Post/.test(t);
+  },
+  'typescript:template-output': (ctx) => {
+    const t = functionDeclText(ctx, 'formatPost');
+    return !!t && t.includes('post.title') && t.includes('post.slug');
+  },
+
+  // ── typed-api ────────────────────────────────────────────────────────────
+  'typed-api:import-types': (ctx) => hasImportFrom(ctx, '@/payload-types'),
+  'typed-api:find-published': (ctx) =>
+    strOf(getNested(ctx, ['where', '_status', 'equals'])) === 'published',
+  'typed-api:limit-sort': (ctx) =>
+    numOf(firstPropAnywhere(ctx, 'limit')) === 5 &&
+    strOf(firstPropAnywhere(ctx, 'sort')) === '-createdAt',
+  'typed-api:typed-return': (ctx) => {
+    const t = functionDeclText(ctx, 'latestPosts');
+    return !!t && t.includes('Post[]');
+  },
+
+  // ── validation ───────────────────────────────────────────────────────────
+  'validation:schema-shape': (ctx) => {
+    const text = ctx.sourceFile.getText();
+    return (
+      /postSchema\s*=\s*z\.object\s*\(/.test(text) &&
+      /title\s*:\s*z\.string\s*\(\s*\)\s*\.min\s*\(\s*3\s*\)/.test(text)
+    );
+  },
+  'validation:hook-parse': (ctx) => {
+    const t = functionDeclText(ctx, 'validatePost');
+    return !!t && t.includes('postSchema.parse') && t.includes('data');
+  },
+  'validation:hook-return': (ctx) => {
+    const t = functionDeclText(ctx, 'validatePost');
+    return !!t && /return\s+data/.test(t);
+  },
 };
 
 // Generic fallback rules for lessons without a dedicated spec, keyed by test id.

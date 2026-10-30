@@ -540,5 +540,35 @@ export const QUIZZES: Record<string, Quiz> = {
     ],
     "correct": 0,
     "explanation": "Verifying cryptographic signatures ensures webhooks originate from Stripe."
+  },
+  "typescript": {
+    "question": "Which command regenerates the TypeScript types from your Payload config?",
+    "options": [
+      "pnpm generate:types",
+      "pnpm build:types",
+      "tsc --emitTypes"
+    ],
+    "correct": 0,
+    "explanation": "Payload reads your config and writes payload-types.ts; regenerate it after every schema change."
+  },
+  "typed-api": {
+    "question": "Which Payload type describes the paginated object returned by the Local API's find()?",
+    "options": [
+      "PaginatedDocs<T>",
+      "Array<T>",
+      "FindResult<T>"
+    ],
+    "correct": 0,
+    "explanation": "find() resolves to a PaginatedDocs<T> with docs, totalDocs and paging metadata."
+  },
+  "validation": {
+    "question": "Which Zod method validates input and throws when it is invalid?",
+    "options": [
+      "schema.parse(data)",
+      "schema.check(data)",
+      "schema.verify(data)"
+    ],
+    "correct": 0,
+    "explanation": "parse() throws a ZodError on failure; safeParse() returns a { success, data | error } result instead."
   }
 };
