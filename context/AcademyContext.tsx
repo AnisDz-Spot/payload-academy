@@ -1,6 +1,7 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
+import { LESSON_COUNT } from '@/data/curriculum';
 import { Role } from '@/data/types';
 
 import { ACHIEVEMENTS, Achievement } from '@/data/achievements';
@@ -42,7 +43,6 @@ interface AcademyContextType {
   setIsPro: (val: boolean) => void;
   planType: 'free' | 'monthly' | 'annual' | 'lifetime';
   setPlanType: (plan: 'free' | 'monthly' | 'annual' | 'lifetime') => void;
-  togglePro: () => void;
   isLessonLocked: (lessonIndex: number) => boolean;
   userNotes: Record<string, string>;
   setNote: (lessonId: string, note: string) => void;
@@ -127,21 +127,13 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const completedQuizzesCount = Object.keys(completedQuizzes).length;
   const bookmarksCount = Object.keys(bookmarks).filter(k => bookmarks[k]).length;
   const notesCount = Object.keys(userNotes).filter(k => userNotes[k]?.trim()).length;
-  const canTakeExam = isAdmin || (isPro && completedLessonsCount >= LESSONS.length && completedQuizzesCount >= LESSONS.length);
+  const canTakeExam = isAdmin || (isPro && completedLessonsCount >= LESSON_COUNT && completedQuizzesCount >= LESSON_COUNT);
   const canClaimCertificate = isAdmin || (isPro && examScore !== null && examScore >= 80);
 
   const isLessonLocked = useCallback((lessonIndex: number) => {
     if (isAdmin || isPro) return false;
     return lessonIndex >= 10;
   }, [isAdmin, isPro]);
-
-  const togglePro = useCallback(() => {
-    setIsPro(prev => {
-      const next = !prev;
-      setPlanType(next ? 'monthly' : 'free');
-      return next;
-    });
-  }, []);
 
   const unlockedAchievements = ACHIEVEMENTS.filter(a =>
     a.condition({
@@ -184,17 +176,11 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const savedBkmarks  = JSON.parse(window.localStorage.getItem('pa-bookmarks')  || '{}');
         const savedFeedback = JSON.parse(window.localStorage.getItem('pa-feedback')   || '{}');
         const savedDays     = JSON.parse(window.localStorage.getItem('pa-days')       || '[]');
-        const savedAdmin    = window.localStorage.getItem('pa-admin') === 'true';
-        const savedPro      = window.localStorage.getItem('pa-pro') === 'true';
-        const savedPlan     = (window.localStorage.getItem('pa-plan') || 'free') as 'free' | 'monthly' | 'annual' | 'lifetime';
 
         setCompletedLessons(savedDone);
         setCompletedQuizzes(savedQuizzes);
         if (savedExam !== null) setExamScoreState(Number(savedExam));
-        setIsAdmin(savedAdmin);
-        setIsPro(savedPro);
-        setPlanType(savedPlan);
-        setCurrentLessonIndex(Math.min(Math.max(0, savedCur), LESSONS.length - 1));
+        setCurrentLessonIndex(Math.min(Math.max(0, savedCur), LESSON_COUNT - 1));
         setRoleFilter(savedRole);
         setUserNotes(savedNotes);
         setTheme(savedTheme);
@@ -276,8 +262,6 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           theme,
           soundEnabled,
           currentLessonIndex,
-          isPro,
-          planType,
         }),
       });
       if (res.ok) {
@@ -288,7 +272,7 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch {
       setSyncStatus('offline');
     }
-  }, [user, completedLessons, completedQuizzes, examScore, userNotes, bookmarks, lessonFeedback, studyDays, theme, soundEnabled, currentLessonIndex, isPro, planType]);
+  }, [user, completedLessons, completedQuizzes, examScore, userNotes, bookmarks, lessonFeedback, studyDays, theme, soundEnabled, currentLessonIndex]);
 
   // Debounced auto-sync to DB when authenticated user makes progress
   useEffect(() => {
@@ -297,7 +281,7 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       syncNow();
     }, 1200);
     return () => clearTimeout(timer);
-  }, [completedLessons, completedQuizzes, examScore, userNotes, bookmarks, lessonFeedback, studyDays, theme, soundEnabled, currentLessonIndex, isPro, planType, user, isHydrated, syncNow]);
+  }, [completedLessons, completedQuizzes, examScore, userNotes, bookmarks, lessonFeedback, studyDays, theme, soundEnabled, currentLessonIndex, user, isHydrated, syncNow]);
 
   // ── Persist to localStorage ────────────────────────────────────
   useEffect(() => {
@@ -307,9 +291,6 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         window.localStorage.setItem('pa-done',        JSON.stringify(completedLessons));
         window.localStorage.setItem('pa-quizzes',     JSON.stringify(completedQuizzes));
         if (examScore !== null) window.localStorage.setItem('pa-exam-score', examScore.toString());
-        window.localStorage.setItem('pa-admin',       isAdmin ? 'true' : 'false');
-        window.localStorage.setItem('pa-pro',         isPro ? 'true' : 'false');
-        window.localStorage.setItem('pa-plan',        planType);
         window.localStorage.setItem('pa-cur',         currentLessonIndex.toString());
         window.localStorage.setItem('pa-role',        roleFilter);
         window.localStorage.setItem('pa-notes',       JSON.stringify(userNotes));
@@ -323,7 +304,7 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (e) {
       console.error('Failed to write localStorage:', e);
     }
-  }, [completedLessons, completedQuizzes, examScore, isAdmin, isPro, planType, currentLessonIndex, roleFilter, userNotes, theme, bookmarks, lessonFeedback, isHydrated]);
+  }, [completedLessons, completedQuizzes, examScore, currentLessonIndex, roleFilter, userNotes, theme, bookmarks, lessonFeedback, isHydrated]);
 
   const toggleAdmin = useCallback(() => {
     setIsAdmin(prev => !prev);
@@ -339,9 +320,9 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       recordStudyDay();
 
       // Check if this completes a module
-      const lesson = LESSONS.find(l => l.id === lessonId);
+      const lesson = LESSON_META.find(l => l.id === lessonId);
       if (lesson) {
-        const moduleLessons = LESSONS.filter(l => l.m === lesson.m);
+        const moduleLessons = LESSON_META.filter(l => l.m === lesson.m);
         const allDone = moduleLessons.every(l => next[l.id]);
         if (allDone) {
           setCelebrationModule(lesson.m);
@@ -405,7 +386,7 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const dismissCelebration = () => setShowCelebration(false);
 
   const nextLesson = useCallback(() => {
-    if (currentLessonIndex < LESSONS.length - 1) {
+    if (currentLessonIndex < LESSON_COUNT - 1) {
       setCurrentLessonIndex(prev => prev + 1);
       closeSidebar();
       recordStudyDay();
@@ -455,10 +436,10 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'j') nextLesson();
       else if (e.key === 'ArrowLeft'  || e.key.toLowerCase() === 'k') prevLesson();
       else if (e.key.toLowerCase() === 'm') {
-        const l = LESSONS[currentLessonIndex];
+        const l = LESSON_META[currentLessonIndex];
         if (l) toggleComplete(l.id);
       } else if (e.key.toLowerCase() === 'b') {
-        const l = LESSONS[currentLessonIndex];
+        const l = LESSON_META[currentLessonIndex];
         if (l) toggleBookmark(l.id);
       }
     };
@@ -470,7 +451,7 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const handler = (e: Event) => {
       const idx = (e as CustomEvent<number>).detail;
-      if (typeof idx === 'number' && idx >= 0 && idx < LESSONS.length) {
+      if (typeof idx === 'number' && idx >= 0 && idx < LESSON_COUNT) {
         setCurrentLessonIndex(idx);
         closeSidebar();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -576,6 +557,9 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch {}
     setUser(null);
+    setIsPro(false);
+    setPlanType('free');
+    setIsAdmin(false);
     setSyncStatus('guest');
   }, []);
 
@@ -596,7 +580,7 @@ export const AcademyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         examScore, setExamScore,
         canTakeExam, canClaimCertificate,
         isAdmin, setIsAdmin, toggleAdmin,
-        isPro, setIsPro, planType, setPlanType, togglePro,
+        isPro, setIsPro, planType, setPlanType,
         isLessonLocked,
         userNotes, setNote,
         bookmarks, toggleBookmark,

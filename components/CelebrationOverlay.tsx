@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useRef } from 'react';
 import { useAcademy } from '@/context/AcademyContext';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
 import { playAchievementFanfare } from '@/lib/sound';
 
 export const CelebrationOverlay: React.FC = () => {
@@ -72,9 +72,9 @@ export const CelebrationOverlay: React.FC = () => {
   if (!showCelebration) return null;
 
   const completedCount = Object.keys(completedLessons).length;
-  const totalModules = [...new Set(LESSONS.map(l => l.m))].length;
+  const totalModules = [...new Set(LESSON_META.map(l => l.m))].length;
   const completedModules = [...new Set(
-    LESSONS.filter(l => completedLessons[l.id]).map(l => l.m)
+    LESSON_META.filter(l => completedLessons[l.id]).map(l => l.m)
   )].length;
 
   return (

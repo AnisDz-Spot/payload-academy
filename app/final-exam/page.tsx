@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
 import { QUIZZES } from '@/data/quizzes';
 import { CURRICULUM_MODULE_COUNT } from '@/data/curriculum';
 
@@ -10,7 +10,6 @@ export default function FinalExamPage() {
   const {
     toggleTheme,
     canTakeExam,
-    toggleAdmin,
     completedLessons,
     completedQuizzes,
     setExamScore,
@@ -20,7 +19,7 @@ export default function FinalExamPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
 
-  const lessonsCount = LESSONS.length;
+  const lessonsCount = LESSON_META.length;
   const completedLessonsCount = Object.keys(completedLessons).length;
   const completedQuizzesCount = Object.keys(completedQuizzes).length;
 
@@ -90,15 +89,6 @@ export default function FinalExamPage() {
                 <Link href="/" className="sb-btn" style={{ padding: '10px 24px', fontSize: 14 }}>
                   📖 Resume Curriculum →
                 </Link>
-                <button
-                  type="button"
-                  onClick={toggleAdmin}
-                  className="sb-btn sec"
-                  style={{ padding: '10px 20px', fontSize: 14, borderColor: '#eab308', color: '#eab308' }}
-                  title="Bypass prerequisites as an administrator"
-                >
-                  👑 Admin: Enable Override &amp; Take Exam
-                </button>
               </div>
             </div>
           </div>
@@ -119,14 +109,14 @@ export default function FinalExamPage() {
     setAnswers({});
   };
 
-  const isFinished = currentIndex >= LESSONS.length;
+  const isFinished = currentIndex >= LESSON_META.length;
 
   // ── Exam Finished Summary ────────────────────────────────────────
   if (isFinished) {
     let correctCount = 0;
     const moduleScores: Record<string, { total: number; correct: number }> = {};
 
-    LESSONS.forEach(l => {
+    LESSON_META.forEach(l => {
       const q = QUIZZES[l.id];
       if (!moduleScores[l.m]) moduleScores[l.m] = { total: 0, correct: 0 };
       moduleScores[l.m].total++;
@@ -136,7 +126,7 @@ export default function FinalExamPage() {
       }
     });
 
-    const finalScore = Math.round((correctCount / LESSONS.length) * 100);
+    const finalScore = Math.round((correctCount / LESSON_META.length) * 100);
     const passed = finalScore >= 80;
 
     // Save score to context & storage
@@ -166,7 +156,7 @@ export default function FinalExamPage() {
                 {finalScore}%
               </div>
               <p style={{ color: 'var(--muted)', fontSize: 15, margin: '8px 0 20px' }}>
-                You scored <b>{correctCount}</b> out of <b>{LESSONS.length}</b> points across all {CURRICULUM_MODULE_COUNT} modules.
+                You scored <b>{correctCount}</b> out of <b>{LESSON_META.length}</b> points across all {CURRICULUM_MODULE_COUNT} modules.
                 {passed ? ' You met the 80% passing threshold for certification!' : ' The minimum passing score for certification is 80%.'}
               </p>
 
@@ -205,7 +195,7 @@ export default function FinalExamPage() {
               <div style={{ marginTop: 36, textAlign: 'left', borderTop: '1px solid var(--border)', paddingTop: 24 }}>
                 <h3 style={{ fontSize: '1.15rem', marginBottom: 16 }}>📋 Detailed Question Review</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {LESSONS.map((l, i) => {
+                  {LESSON_META.map((l, i) => {
                     const q = QUIZZES[l.id];
                     if (!q) return null;
                     const userChoice = answers[l.id];
@@ -257,11 +247,11 @@ export default function FinalExamPage() {
   }
 
   // ── Active Question View ─────────────────────────────────────────
-  const lesson = LESSONS[currentIndex];
+  const lesson = LESSON_META[currentIndex];
   const q = QUIZZES[lesson.id];
   const answered = answers[lesson.id] !== undefined;
   const chosen = answers[lesson.id];
-  const pct = Math.round((currentIndex / LESSONS.length) * 100);
+  const pct = Math.round((currentIndex / LESSON_META.length) * 100);
 
   return (
     <div className="standalone-page">
@@ -283,7 +273,7 @@ export default function FinalExamPage() {
         <div className="wrap" style={{ maxWidth: 780 }}>
           <div className="exam-header">
             <span style={{ fontSize: 13, fontWeight: 700 }}>
-              Question {currentIndex + 1} of {LESSONS.length}
+              Question {currentIndex + 1} of {LESSON_META.length}
             </span>
             <div className="exam-progress-bar">
               <b style={{ width: `${pct}%` }}></b>
@@ -340,7 +330,7 @@ export default function FinalExamPage() {
                 disabled={!answered}
                 onClick={() => setCurrentIndex(prev => prev + 1)}
               >
-                {currentIndex === LESSONS.length - 1 ? 'Finish Assessment 🎉' : 'Next Question →'}
+                {currentIndex === LESSON_META.length - 1 ? 'Finish Assessment 🎉' : 'Next Question →'}
               </button>
             </div>
           </div>

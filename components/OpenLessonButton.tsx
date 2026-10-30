@@ -1,7 +1,7 @@
 'use client'
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
 
 // Deep-links into the in-app course player by writing the target lesson index
 // to the same localStorage key the AcademyContext hydrates from, then routing
@@ -15,7 +15,7 @@ export const OpenLessonButton: React.FC<{
   const router = useRouter();
 
   const open = () => {
-    const idx = LESSONS.findIndex(l => l.id === lessonId);
+    const idx = LESSON_META.findIndex(l => l.id === lessonId);
     try {
       window.localStorage.setItem('pa-cur', String(idx >= 0 ? idx : 0));
     } catch {}

@@ -1,17 +1,12 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
 import { CHALLENGE_SPECS } from '@/data/challengeSuite';
 import { GLOSSARY } from '@/data/glossary';
 import { ACHIEVEMENTS } from '@/data/achievements';
 import { CHANGELOG_DATA } from '@/data/changelog';
-import {
-  PAYLOAD_VERIFIED_VERSION,
-  NEXTJS_TARGET,
-  CURRICULUM_MODULE_COUNT,
-  LESSON_COUNT,
-} from '@/data/curriculum';
+import { PAYLOAD_VERIFIED_VERSION, NEXTJS_TARGET, CURRICULUM_MODULE_COUNT, LESSON_COUNT } from '@/data/curriculum';
 import { SITE_URL, SITE_NAME, FREE_LESSON_COUNT } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -21,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 const moduleCounts: { name: string; count: number }[] = [];
-for (const l of LESSONS) {
+for (const l of LESSON_META) {
   const existing = moduleCounts.find((m) => m.name === l.m);
   if (existing) existing.count += 1;
   else moduleCounts.push({ name: l.m, count: 1 });

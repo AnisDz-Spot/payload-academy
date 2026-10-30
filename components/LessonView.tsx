@@ -1,7 +1,8 @@
 'use client'
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useAcademy } from '@/context/AcademyContext';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
 import { QUIZZES } from '@/data/quizzes';
 import { CHALLENGES } from '@/data/challenges';
 import { QuizCard } from './QuizCard';
@@ -10,6 +11,9 @@ import { InteractiveChallenge } from './InteractiveChallenge';
 import { ProPaywallBanner } from './ProPaywallBanner';
 import { Spotlight } from '@/components/ui/spotlight';
 import { PAYLOAD_VERIFIED_VERSION } from '@/data/curriculum';
+import { getSessionUser } from '@/lib/db';
+import { canAccessLesson, hasProAccess } from '@/lib/entitlements';
+import { useRouter } from 'next/navigation';
 
 const ROLE_LABELS: Record<string, string> = {
   all: 'Fullstack / All Roles',
@@ -23,16 +27,14 @@ const DIFF_LABELS: Record<string, { label: string; color: string }> = {
   advanced:     { label: 'Advanced',     color: '#ef4444' },
 };
 
-// Derive reading time from HTML content.
-// Uses ~130 wpm — realistic for technical material with code snippets.
 function readingMins(html: string): number {
   const text = html
-    .replace(/<[^>]+>/g, ' ')           // strip HTML tags (replace with space)
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
     .replace(/&nbsp;/g, ' ')
-    .replace(/&#?\w+;/g, ' ')           // strip remaining entities
+    .replace(/&#?\w+;/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   const words = text ? text.split(' ').length : 0;
@@ -53,39 +55,112 @@ export const LessonView: React.FC = () => {
     isLessonLocked,
   } = useAcademy();
 
-  const isLocked = isLessonLocked(currentLessonIndex);
+  const router = useRouter();
+  const lessonMeta = LESSON_META[currentLessonIndex];
+  const lessonId = lessonMeta?.id;
+
+  // Fetch lesson body from server API.
+  const [lessonBody, setLessonBody] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [proRequired, setProRequired] = useState(false);
+
+  useEffect(() => {
+    if (!lessonId) {
+      setLoading(false);
+      setError('No lesson ID');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setProRequired(false);
+
+    fetch(`/api/lessons/${lessonId}`, {
+      credentials: 'include',
+    })
+      .then(res => {
+        if (res.status === 403) {
+          setProRequired(true);
+          return res.json().then(d => { setError(d.code || 'PRO_REQUIRED'); throw d; });
+        }
+        if (!res.ok) throw new Error('Network error');
+        return res.json();
+      })
+      .then(data => {
+        setLessonBody(data.c);
+      })
+      .catch(err => {
+        console.error('[LessonView] fetch error:', err);
+        if (err instanceof Error && err.message === 'PRO_REQUIRED') {
+          setProRequired(true);
+          setError('This lesson is part of Academy Pro.');
+        } else {
+          setError('Failed to load lesson content.');
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [lessonId]);
+
+  // Resolve the full lesson record: merge metadata + fetched body.
+  const resolvedTitle = lessonMeta?.t ?? '';
+  const resolvedModule = lessonMeta?.m ?? '';
+  const resolvedDifficulty = lessonMeta?.difficulty;
+  const resolvedBadge = lessonMeta?.badge;
+  const resolvedVerified = lessonMeta?.verified;
+  const resolvedReadingMins = lessonMeta?.readingMins;
+  const resolvedTags = lessonMeta?.tags ?? [];
+  const resolvedRelatedIds = lessonMeta?.relatedIds ?? [];
+
+  const isPro = hasProAccess(useAcademy().isPro ? { isPro: true, role: undefined } : undefined);
+
+  // Build a lesson-like object for the rest of the component.
+  const resolvedLesson = {
+    id: lessonId ?? '',
+    t: resolvedTitle,
+    m: resolvedModule,
+    r: lessonMeta?.r ?? [],
+    badge: resolvedBadge,
+    verified: resolvedVerified,
+    readingMins: resolvedReadingMins,
+    difficulty: lessonMeta?.difficulty,
+    tags: resolvedTags,
+    relatedIds: resolvedRelatedIds,
+    c: lessonBody ?? '',
+  };
+
+  const isLocked = isLessonLocked(currentLessonIndex) || proRequired;
 
   const articleRef = useRef<HTMLElement>(null);
   const [tocItems, setTocItems] = useState<{ id: string; text: string; level: number }[]>([]);
   const [tocOpen, setTocOpen] = useState(false);
 
-  const lesson = LESSONS[currentLessonIndex] || LESSONS[0];
-  const isDone = Boolean(completedLessons[lesson.id]);
-  const isBookmarked = Boolean(bookmarks[lesson.id]);
-  const feedback = lessonFeedback[lesson.id];
-  const quiz = QUIZZES[lesson.id];
-  const challenge = CHALLENGES[lesson.id];
-  const mins = lesson.readingMins ?? readingMins(lesson.c);
-  const diff = lesson.difficulty ? DIFF_LABELS[lesson.difficulty] : null;
+  const isDone = Boolean(completedLessons[resolvedLesson.id]);
+  const isBookmarked = Boolean(bookmarks[resolvedLesson.id]);
+  const feedback = lessonFeedback[resolvedLesson.id];
+  const quiz = QUIZZES[resolvedLesson.id];
+  const challenge = CHALLENGES[resolvedLesson.id];
+  const mins = resolvedLesson.readingMins ?? readingMins(resolvedLesson.c || '');
+  const diff = resolvedLesson.difficulty ? DIFF_LABELS[resolvedLesson.difficulty] : null;
 
-  const prevLessonObj = currentLessonIndex > 0 ? LESSONS[currentLessonIndex - 1] : null;
-  const nextLessonObj = currentLessonIndex < LESSONS.length - 1 ? LESSONS[currentLessonIndex + 1] : null;
+  const prevLessonObj = currentLessonIndex > 0 ? LESSON_META[currentLessonIndex - 1] : null;
+  const nextLessonObj = currentLessonIndex < LESSON_META.length - 1 ? LESSON_META[currentLessonIndex + 1] : null;
 
-  // Related lessons
-  const relatedLessons = (lesson.relatedIds ?? [])
-    .map(id => LESSONS.find(l => l.id === id))
-    .filter(Boolean) as typeof LESSONS;
+  // Related lessons from metadata.
+  const relatedLessonIds = resolvedLesson.relatedIds;
+  const relatedLessons = relatedLessonIds
+    .map(id => LESSON_META.find(l => l.id === id))
+    .filter(Boolean) as typeof LESSON_META;
 
-  // Auto-suggest related if none declared: same module, nearby lessons
   const suggestedRelated = relatedLessons.length === 0
-    ? LESSONS.filter(l => l.id !== lesson.id && l.m === lesson.m).slice(0, 3)
+    ? LESSON_META.filter(l => l.id !== resolvedLesson.id && l.m === resolvedLesson.m).slice(0, 3)
     : relatedLessons;
 
-  // Attach copy buttons & syntax highlighting + build TOC
+  // Attach copy buttons, syntax highlighting, build TOC.
   useEffect(() => {
-    if (!articleRef.current) return;
+    if (!articleRef.current || loading || proRequired || !resolvedLesson.c) return;
 
-    // Build Table of Contents from h2/h3 tags
+    // Build TOC from h2/h3 tags.
     const headings = articleRef.current.querySelectorAll('h2, h3');
     const items: { id: string; text: string; level: number }[] = [];
     headings.forEach((el, i) => {
@@ -95,7 +170,7 @@ export const LessonView: React.FC = () => {
     });
     setTocItems(items);
 
-    // Attach copy buttons
+    // Attach copy buttons.
     const codeBlocks = articleRef.current.querySelectorAll('.cb');
     codeBlocks.forEach(b => {
       if (b.querySelector('.cp')) return;
@@ -112,26 +187,19 @@ export const LessonView: React.FC = () => {
       b.appendChild(btn);
     });
 
-    // Syntax highlighting.
-    //
-    // Tokenize the decoded text in ONE pass. The previous implementation ran a
-    // series of regex replacements over `block.innerHTML`, so each pass would
-    // re-match the markup emitted by the pass before it and mangle the output
-    // (highlight class names ended up inside the visible code). Reading
-    // `textContent`, escaping it once and running a single combined regex makes
-    // that impossible.
+    // Syntax highlighting — single-pass tokenizer.
     const keywords = ['import', 'from', 'export', 'default', 'const', 'let', 'var', 'async', 'await', 'function', 'return', 'if', 'else', 'throw', 'new', 'try', 'catch', 'typeof', 'interface', 'type', 'extends', 'implements', 'as'];
     const types = ['CollectionConfig', 'GlobalConfig', 'CollectionAfterChangeHook', 'CollectionBeforeChangeHook', 'CollectionBeforeValidateHook', 'PayloadHandler', 'PayloadRequest', 'Payload', 'PaginatedDocs', 'NextConfig', 'Plugin', 'Metadata', 'string', 'number', 'boolean', 'Promise', 'Response'];
     const bools = ['true', 'false', 'null', 'undefined'];
     const token = new RegExp(
       [
-        '\\/\\/[^\\n]*',                        // line comment
-        "'(?:[^'\\\\\\n]|\\\\.)*'",             // single-quoted string
-        '"(?:[^"\\\\\\n]|\\\\.)*"',             // double-quoted string
-        '\\b(?:' + keywords.join('|') + ')\\b', // keyword
-        '\\b(?:' + types.join('|') + ')\\b',    // type
-        '\\b(?:' + bools.join('|') + ')\\b',    // boolean / nullish
-        '\\b\\d+(?:\\.\\d+)?\\b',               // number
+        '\\/\\/[^\\n]*',
+        "'(?:[^'\\\\\\n]|\\\\.)*'",
+        '"(?:[^"\\\\\\n]|\\\\.)*"',
+        '\\b(?:' + keywords.join('|') + ')\\b',
+        '\\b(?:' + types.join('|') + ')\\b',
+        '\\b(?:' + bools.join('|') + ')\\b',
+        '\\b\\d+(?:\\.\\d+)?\\b',
       ].join('|'),
       'g',
     );
@@ -148,51 +216,44 @@ export const LessonView: React.FC = () => {
       if ((block as HTMLElement).dataset.hl) return;
       (block as HTMLElement).dataset.hl = '1';
       const escaped = (block.textContent || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>');
       block.innerHTML = escaped.replace(
         token,
         (match) => '<span class="' + classify(match) + '">' + match + '</span>',
       );
     });
-  }, [lesson.id]);
+  }, [loading, proRequired, resolvedLesson.c, lessonId]);
 
   // Reset TOC open state when lesson changes.
-  /* eslint-disable react-hooks/set-state-in-effect -- intentional reset on lesson change */
-  useEffect(() => { setTocOpen(false); }, [lesson.id]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  useEffect(() => { setTocOpen(false); }, [lessonId]);
 
   return (
     <article ref={articleRef} id="art" className="lesson-article">
 
-      {/* ── Lesson Header Card ── */}
       <div className="lesson-header-card relative overflow-hidden">
         <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="#f97316" />
         <div className="lesson-meta-bar relative z-10">
           <div className="kick flex items-center gap-2">
-            <span>{lesson.m}</span> · <span>Lesson {currentLessonIndex + 1} of {LESSONS.length}</span>
+            <span>{resolvedModule}</span> · <span>Lesson {currentLessonIndex + 1} of {LESSON_META.length}</span>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Reading time */}
             <span className="lesson-meta-chip">
               ⏱ {mins} min read
             </span>
-            {/* Difficulty */}
             {diff && (
               <span className="lesson-meta-chip" style={{ color: diff.color, borderColor: diff.color, background: `${diff.color}15` }}>
                 {diff.label}
               </span>
             )}
-            {/* Freshness — the version this lesson was last verified against */}
             <span
               className="lesson-meta-chip"
-              title={`Last verified against Payload v${lesson.verified ?? PAYLOAD_VERIFIED_VERSION}`}
+              title={`Last verified against Payload v${resolvedVerified ?? PAYLOAD_VERIFIED_VERSION}`}
               style={{ color: '#10b981', borderColor: '#10b981', background: '#10b98115' }}
             >
-              🔒 v{lesson.verified ?? PAYLOAD_VERIFIED_VERSION}
+              🔒 v{resolvedVerified ?? PAYLOAD_VERIFIED_VERSION}
             </span>
-            {/* Status */}
             {isDone ? (
               <span className="status-badge completed">✓ Completed</span>
             ) : (
@@ -202,42 +263,33 @@ export const LessonView: React.FC = () => {
         </div>
 
         <h1 className="lesson-main-title relative z-10">
-          {lesson.t}
-          {lesson.badge && <span className="version-badge">{lesson.badge}</span>}
+          {resolvedTitle}
+          {resolvedBadge && <span className="version-badge">{resolvedBadge}</span>}
         </h1>
 
         <div className="lesson-tags-row">
           <div className="tags">
-            {lesson.r.map(r => (
+            {resolvedLesson.r.map(r => (
               <span key={r} className="role-tag">{ROLE_LABELS[r] || r}</span>
             ))}
-            {lesson.tags?.map(tag => (
+            {resolvedLesson.tags?.map(tag => (
               <span key={tag} className="role-tag" style={{ background: 'var(--accent2)', color: 'var(--accent)', borderColor: 'var(--accent)' }}>
                 {tag}
               </span>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {/* Print */}
-            <button
-              className="quick-mark-btn"
-              onClick={() => window.print()}
-              title="Print or Save Lesson as PDF"
-            >
-              🖨️ Print
-            </button>
-            {/* Bookmark */}
+            <button className="quick-mark-btn" onClick={() => window.print()} title="Print or Save Lesson as PDF">🖨️ Print</button>
             <button
               className={`quick-mark-btn ${isBookmarked ? 'bookmarked' : ''}`}
-              onClick={() => toggleBookmark(lesson.id)}
+              onClick={() => toggleBookmark(resolvedLesson.id)}
               title={isBookmarked ? 'Remove bookmark' : 'Bookmark this lesson'}
             >
               {isBookmarked ? '🔖 Bookmarked' : '🏷 Bookmark'}
             </button>
-            {/* Mark complete */}
             <button
               className={`quick-mark-btn ${isDone ? 'done' : ''}`}
-              onClick={() => toggleComplete(lesson.id)}
+              onClick={() => toggleComplete(resolvedLesson.id)}
               title={isDone ? 'Mark as incomplete' : 'Mark as complete'}
             >
               {isDone ? '✓ Done' : '○ Mark Complete'}
@@ -246,7 +298,7 @@ export const LessonView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Table of Contents ── */}
+      {/* Table of Contents */}
       {!isLocked && tocItems.length >= 3 && (
         <div className="toc-card">
           <button className="toc-toggle" onClick={() => setTocOpen(p => !p)}>
@@ -272,34 +324,34 @@ export const LessonView: React.FC = () => {
         </div>
       )}
 
-      {/* ── Locked Pro Paywall or Lesson Content ── */}
-      {isLocked ? (
-        <ProPaywallBanner lessonTitle={lesson.t} moduleName={lesson.m} />
+      {/* Content area with access gating */}
+      {loading ? (
+        <div className="lesson-loading">Loading lesson...</div>
+      ) : proRequired ? (
+        <ProPaywallBanner lessonTitle={resolvedTitle} moduleName={resolvedModule} />
+      ) : !lessonBody ? (
+        <div className="lesson-error">Lesson content could not be loaded.</div>
       ) : (
-        <>
-          {/* ── Lesson Content ── */}
-          <div className="lesson-content-body" dangerouslySetInnerHTML={{ __html: lesson.c }} />
-
-          {/* ── Interactive Challenge & Tests ── */}
-          {challenge && (challenge.challengeText || challenge.docsPath) && (
-            <InteractiveChallenge key={`challenge-${lesson.id}`} lessonId={lesson.id} challenge={challenge} />
-          )}
-
-          {/* ── Quiz ── */}
-          {quiz && <QuizCard key={`quiz-${lesson.id}`} quiz={quiz} lessonId={lesson.id} />}
-        </>
+        <div className="lesson-content-body" dangerouslySetInnerHTML={{ __html: lessonBody }} />
       )}
 
-      {/* ── Notes ── */}
-      <NotesDrawer lessonId={lesson.id} />
+      {/* Interactive Challenge */}
+      {!loading && !proRequired && challenge && (challenge.challengeText || challenge.docsPath) && (
+        <InteractiveChallenge key={`challenge-${resolvedLesson.id}`} lessonId={resolvedLesson.id} challenge={challenge} />
+      )}
 
-      {/* ── Lesson Feedback ── */}
+      {!loading && !proRequired && quiz && <QuizCard key={`quiz-${resolvedLesson.id}`} quiz={quiz} lessonId={resolvedLesson.id} />}
+
+      {/* Notes */}
+      <NotesDrawer lessonId={resolvedLesson.id} />
+
+      {/* Lesson Feedback */}
       <div className="lesson-feedback-bar">
         <span className="lesson-feedback-label">Was this lesson helpful?</span>
         <div className="lesson-feedback-btns">
           <button
             className={`feedback-btn ${feedback === 'up' ? 'selected-up' : ''}`}
-            onClick={() => setFeedback(lesson.id, 'up')}
+            onClick={() => setFeedback(resolvedLesson.id, 'up')}
             disabled={Boolean(feedback)}
             title="Yes, helpful"
           >
@@ -307,7 +359,7 @@ export const LessonView: React.FC = () => {
           </button>
           <button
             className={`feedback-btn ${feedback === 'down' ? 'selected-down' : ''}`}
-            onClick={() => setFeedback(lesson.id, 'down')}
+            onClick={() => setFeedback(resolvedLesson.id, 'down')}
             disabled={Boolean(feedback)}
             title="Needs improvement"
           >
@@ -321,21 +373,20 @@ export const LessonView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Related Lessons ── */}
-      {suggestedRelated.length > 0 && (
+      {/* Related Lessons */}
+      {suggestedRelated.length > 0 && !loading && !proRequired && (
         <div className="related-lessons-card">
           <h3 className="related-lessons-title">📎 Related Lessons</h3>
           <div className="related-lessons-grid">
             {suggestedRelated.map(rel => {
-              const idx = LESSONS.indexOf(rel);
+              const idx = LESSON_META.indexOf(rel);
               const relDone = Boolean(completedLessons[rel.id]);
               return (
                 <button
                   key={rel.id}
                   className={`related-lesson-item ${relDone ? 'done' : ''}`}
                   onClick={() => {
-                    // Navigate to lesson — fire a custom event the sidebar can listen to
-                    window.dispatchEvent(new CustomEvent('navigate-lesson', { detail: idx }));
+                    router.push(`/lesson/${rel.id}`);
                   }}
                 >
                   <span className="related-dot" />
@@ -351,13 +402,13 @@ export const LessonView: React.FC = () => {
         </div>
       )}
 
-      {/* ── Pager ── */}
+      {/* Pager */}
       <div className="pager-container">
         <div className="pager">
           <button
             id="pv"
             className="pager-nav-btn prev"
-            disabled={currentLessonIndex === 0}
+            disabled={currentLessonIndex === 0 || loading || proRequired}
             onClick={prevLesson}
           >
             <span className="pager-arrow">←</span>
@@ -369,14 +420,14 @@ export const LessonView: React.FC = () => {
           <button
             className={`pager-complete-btn ${isDone ? 'done-btn' : ''}`}
             id="dn"
-            onClick={() => toggleComplete(lesson.id)}
+            onClick={() => toggleComplete(resolvedLesson.id)}
           >
             {isDone ? '✓ Completed' : 'Mark as Complete'}
           </button>
           <button
             id="nx"
             className="pager-nav-btn next"
-            disabled={currentLessonIndex === LESSONS.length - 1}
+            disabled={currentLessonIndex >= LESSON_META.length - 1 || loading || proRequired}
             onClick={nextLesson}
           >
             <div className="pager-text-wrap align-right">

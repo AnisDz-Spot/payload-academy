@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useAcademy } from '@/context/AcademyContext';
 import { CardSpotlight } from '@/components/ui/card-spotlight';
 import { LESSON_COUNT, FREE_LESSON_COUNT, CURRICULUM_MODULE_COUNT } from '@/data/curriculum';
 
@@ -10,8 +9,6 @@ export const ProPaywallBanner: React.FC<{ lessonTitle: string; moduleName: strin
   lessonTitle,
   moduleName,
 }) => {
-  const { togglePro } = useAcademy();
-
   return (
     <div className="relative my-8 overflow-hidden rounded-2xl">
       {/* Blurred background preview mockup */}
@@ -69,14 +66,12 @@ export const ProPaywallBanner: React.FC<{ lessonTitle: string; moduleName: strin
             🚀 View Subscription Plans ($19/mo) →
           </Link>
 
-          <button
-            type="button"
-            onClick={togglePro}
-            className="w-full sm:w-auto px-5 py-3 rounded-xl font-bold text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition duration-150"
-            title="Toggle Pro mode in local session for previewing"
+          <Link
+            href="/lessons"
+            className="w-full sm:w-auto px-5 py-3 rounded-xl font-bold text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition duration-150 text-center"
           >
-            ⚡ Simulate Pro Unlock
-          </button>
+            📚 Browse the free lessons
+          </Link>
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-4 text-xs text-gray-400">

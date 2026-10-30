@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionUser, saveUserProgress, updateUserProStatus } from '@/lib/db';
+import { getSessionUser, saveUserProgress } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,11 +25,11 @@ export async function POST(req: NextRequest) {
       theme,
       soundEnabled,
       currentLessonIndex,
-      isPro,
-      planType,
     } = body;
 
-    // Save progress
+    // Entitlement (`isPro` / `planType`) is deliberately NOT read from the
+    // request body: it is written only by the Stripe webhook. Accepting it here
+    // would let any signed-in learner grant themselves Pro access.
     const updatedProgress = await saveUserProgress(sessionData.user.id, {
       completedLessons,
       completedQuizzes,
@@ -42,11 +42,6 @@ export async function POST(req: NextRequest) {
       soundEnabled,
       currentLessonIndex,
     });
-
-    // If pro status provided and changed
-    if (typeof isPro === 'boolean' && planType) {
-      await updateUserProStatus(sessionData.user.id, isPro, planType);
-    }
 
     return NextResponse.json({
       success: true,

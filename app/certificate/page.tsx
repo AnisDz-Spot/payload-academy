@@ -1,8 +1,9 @@
 'use client'
+
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
 import { GlareCard } from '@/components/ui/glare-card';
 import { LampContainer } from '@/components/ui/lamp';
 import { SparklesCore } from '@/components/ui/sparkles';
@@ -16,7 +17,6 @@ export default function CertificatePage() {
     canTakeExam,
     canClaimCertificate,
     isAdmin,
-    toggleAdmin,
     examScore,
   } = useAcademy();
 
@@ -27,9 +27,9 @@ export default function CertificatePage() {
 
   const completedLessonsCount = Object.keys(completedLessons).length;
   const completedQuizzesCount = Object.keys(completedQuizzes).length;
-  const totalLessons = LESSONS.length;
+  const totalLessons = LESSON_META.length;
 
-  const displayScore = examScore !== null ? examScore : (isAdmin ? 100 : 80);
+  const displayScore = examScore !== null ? examScore : 80;
 
   // Deterministic preview ID shown when the credential has not been issued by
   // the server (guest / not-yet-claimed). A real, signed ID replaces it once
@@ -225,96 +225,6 @@ export default function CertificatePage() {
     link.href = canvasRef.current.toDataURL('image/png');
     link.click();
   };
-
-  // ── Locked Gating View (Exam not passed and not Admin) ────────────
-  if (!canClaimCertificate) {
-    return (
-      <div className="standalone-page">
-        <header className="standalone-header">
-          <div className="standalone-header-inner">
-            <Link href="/" className="back-link">← Back to Course</Link>
-            <div className="logo-small">
-              <i>P</i>
-              <span>Certificate of Mastery</span>
-            </div>
-            <button className="t" onClick={toggleTheme}>◐ Theme</button>
-          </div>
-        </header>
-
-        <main className="standalone-main">
-          <div className="wrap" style={{ maxWidth: 740 }}>
-            <div className="exam-summary-card" style={{ textAlign: 'center', padding: '44px 32px' }}>
-              <div style={{ fontSize: 56, marginBottom: 14 }}>🔒</div>
-              <div className="kick" style={{ color: '#f59e0b' }}>Prerequisites Incomplete</div>
-              <h1 style={{ margin: '8px 0 12px' }}>Certificate of Mastery Locked</h1>
-              <p style={{ color: 'var(--muted)', fontSize: 15, maxWidth: 540, margin: '0 auto 28px', lineHeight: 1.6 }}>
-                Official verification credentials and downloads are granted strictly upon achieving a passing score of <b>80% or higher</b> on the Final Mastery Exam.
-              </p>
-
-              {/* Requirements Checklist */}
-              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: 22, textAlign: 'left', marginBottom: 28, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* 1. Complete Lessons */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>{completedLessonsCount >= totalLessons ? '✅' : '○'}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>1. Complete all {totalLessons} Curriculum Lessons</span>
-                  </div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>
-                    {completedLessonsCount}/{totalLessons}
-                  </span>
-                </div>
-
-                {/* 2. Pass Quizzes */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>{completedQuizzesCount >= totalLessons ? '✅' : '○'}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>2. Pass all {totalLessons} Lesson Quick Quizzes</span>
-                  </div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>
-                    {completedQuizzesCount}/{totalLessons}
-                  </span>
-                </div>
-
-                {/* 3. Final Exam Score >= 80% */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>{examScore !== null && examScore >= 80 ? '✅' : '○'}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>3. Pass Final Comprehensive Exam (Score ≥ 80%)</span>
-                  </div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: examScore !== null && examScore >= 80 ? 'var(--green)' : '#f59e0b' }}>
-                    {examScore !== null ? `${examScore}%` : 'Not Attempted'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                {canTakeExam ? (
-                  <Link href="/final-exam" className="sb-btn" style={{ padding: '10px 24px', fontSize: 14 }}>
-                    🎓 Take Final Exam (80% to Pass) →
-                  </Link>
-                ) : (
-                  <Link href="/" className="sb-btn" style={{ padding: '10px 24px', fontSize: 14 }}>
-                    📖 Resume Lessons &amp; Quizzes →
-                  </Link>
-                )}
-
-                <button
-                  type="button"
-                  onClick={toggleAdmin}
-                  className="sb-btn sec"
-                  style={{ padding: '10px 20px', fontSize: 14, borderColor: '#eab308', color: '#eab308' }}
-                  title="Bypass prerequisites as an administrator"
-                >
-                  👑 Admin: Enable Override &amp; Preview
-                </button>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   // ── Unlocked View ────────────────────────────────────────────────
   return (

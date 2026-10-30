@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
 import { ACHIEVEMENTS } from '@/data/achievements';
 import { Spotlight } from '@/components/ui/spotlight';
 import { CardSpotlight } from '@/components/ui/card-spotlight';
@@ -28,8 +28,8 @@ export default function DashboardPage() {
 
   // All distinct modules
   const modules = useMemo(() => {
-    const list: { name: string; total: number; done: number; lessons: typeof LESSONS }[] = [];
-    LESSONS.forEach(l => {
+    const list: { name: string; total: number; done: number; lessons: typeof LESSON_META }[] = [];
+    LESSON_META.forEach(l => {
       let m = list.find(item => item.name === l.m);
       if (!m) {
         m = { name: l.m, total: 0, done: 0, lessons: [] };
@@ -43,9 +43,9 @@ export default function DashboardPage() {
   }, [completedLessons]);
 
   const totalCompleted = Object.keys(completedLessons).length;
-  const progressPercent = Math.round((totalCompleted / LESSONS.length) * 100);
+  const progressPercent = Math.round((totalCompleted / LESSON_META.length) * 100);
   const bookmarksList = useMemo(() => {
-    return LESSONS.filter(l => bookmarks[l.id]);
+    return LESSON_META.filter(l => bookmarks[l.id]);
   }, [bookmarks]);
 
   // Role readiness scores
@@ -55,7 +55,7 @@ export default function DashboardPage() {
       backend:  { label: 'Backend & APIs', total: 0, done: 0 },
       devops:   { label: 'DevOps & Infra', total: 0, done: 0 },
     };
-    LESSONS.forEach(l => {
+    LESSON_META.forEach(l => {
       l.r.forEach(r => {
         if (r in roles) {
           const roleKey = r as keyof typeof roles;
@@ -106,7 +106,7 @@ export default function DashboardPage() {
           {!canClaimCertificate && (
             <div className="upgrade-banner">
               <div className="upgrade-banner-text">
-                <strong>🚀 Unlock the Full Payload Academy</strong> — Get all {LESSONS.length} lessons, interactive tools, Final Exam &amp; your Certificate of Mastery.
+                <strong>🚀 Unlock the Full Payload Academy</strong> — Get all {LESSON_META.length} lessons, interactive tools, Final Exam &amp; your Certificate of Mastery.
                 Plans from <strong>$19/month</strong> or <strong>$99/year</strong> · 30-day money-back guarantee.
               </div>
               <Link href="/pricing" className="upgrade-banner-cta">
@@ -120,7 +120,7 @@ export default function DashboardPage() {
             <CardSpotlight className="dash-metric-card">
               <span className="dash-metric-icon">🚀</span>
               <div className="dash-metric-val">{progressPercent}%</div>
-              <div className="dash-metric-label">{totalCompleted} of {LESSONS.length} Lessons Completed</div>
+              <div className="dash-metric-label">{totalCompleted} of {LESSON_META.length} Lessons Completed</div>
               <div className="dash-bar-bg" style={{ marginTop: 10 }}>
                 <div className="dash-bar-fill" style={{ width: `${progressPercent}%` }} />
               </div>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                   ? `Passed with ${examScore}% (≥ 80%)`
                   : canTakeExam
                   ? 'Ready for Final Exam'
-                  : `${Object.keys(completedQuizzes).length}/${LESSONS.length} Quizzes Passed`}
+                  : `${Object.keys(completedQuizzes).length}/${LESSON_META.length} Quizzes Passed`}
               </div>
               <div style={{ marginTop: 8 }}>
                 {canClaimCertificate ? (
@@ -443,7 +443,7 @@ export default function DashboardPage() {
                     key={l.id}
                     href="/"
                     onClick={() => {
-                      const idx = LESSONS.indexOf(l);
+                      const idx = LESSON_META.indexOf(l);
                       if (idx >= 0) setCurrentLessonIndex(idx);
                     }}
                     className="dash-bookmark-item"

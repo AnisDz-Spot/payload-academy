@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test \"tests/**/*.test.ts\"",
     "check:content": "tsx scripts/check-content.ts",
+    "gen:lesson-meta": "tsx scripts/gen-lesson-meta.ts",
     "verify:challenges": "tsx scripts/verify-challenges.ts"
   },
   "dependencies": {

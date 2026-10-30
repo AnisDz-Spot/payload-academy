@@ -16,6 +16,9 @@ export interface Lesson {
   verified?: string;      // Payload version this lesson was last checked against
 }
 
+// Metadata-only view of a lesson. Safe to ship to the browser: no paid body.
+export type LessonMeta = Omit<Lesson, 'c'>;
+
 export interface Quiz {
   question: string;
   options: string[];

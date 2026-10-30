@@ -7,7 +7,7 @@ import { SITE_URL, SITE_NAME, isFreeLesson, lessonDescription } from '@/lib/seo'
 
 export const metadata: Metadata = {
   title: `All ${LESSON_COUNT} Payload CMS 3.x Lessons — Full Curriculum`,
-  description: `Browse the complete ${SITE_NAME} curriculum: ${LESSONS.length} hands-on lessons across ${CURRICULUM_MODULE_COUNT} modules covering collections, fields, access control, hooks, auth, rich text, jobs, plugins, AI, and production deployment with Payload 3.${PAYLOAD_VERIFIED_VERSION.split('.')[1]} and Next.js ${NEXTJS_TARGET}.`,
+  description: `Browse the complete ${SITE_NAME} curriculum: ${LESSON_COUNT} hands-on lessons across ${CURRICULUM_MODULE_COUNT} modules...`,
   alternates: { canonical: `${SITE_URL}/lessons` },
 };
 

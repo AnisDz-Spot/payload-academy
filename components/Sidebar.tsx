@@ -2,7 +2,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { useAcademy } from '@/context/AcademyContext';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
+import { LESSON_COUNT } from '@/data/curriculum';
 import { Role } from '@/data/types';
 
 const ROLES: { key: Role; label: string }[] = [
@@ -25,7 +26,7 @@ export const Sidebar: React.FC = () => {
     isLessonLocked,
   } = useAcademy();
 
-  const filteredLessons = LESSONS.filter(lesson => {
+  const filteredLessons = LESSON_META.filter(lesson => {
     if (roleFilter !== 'all' && !lesson.r.includes(roleFilter) && !lesson.r.includes('all')) {
       return false;
     }
@@ -36,14 +37,14 @@ export const Sidebar: React.FC = () => {
       const q = searchQuery.toLowerCase();
       const matchTitle = lesson.t.toLowerCase().includes(q);
       const matchModule = lesson.m.toLowerCase().includes(q);
-      const matchContent = lesson.c.toLowerCase().includes(q);
-      if (!matchTitle && !matchModule && !matchContent) return false;
+      const matchTags = (lesson.tags ?? []).some(tag => tag.toLowerCase().includes(q));
+      if (!matchTitle && !matchModule && !matchTags) return false;
     }
     return true;
   });
 
   const completedCount = Object.keys(completedLessons).length;
-  const progressPercent = Math.round((completedCount / LESSONS.length) * 100);
+  const progressPercent = Math.round((completedCount / LESSON_COUNT) * 100);
 
   let lastModule = '';
 
@@ -51,7 +52,7 @@ export const Sidebar: React.FC = () => {
     <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
       <input
         type="search"
-        placeholder={`Search ${LESSONS.length} lessons… (/)`}
+        placeholder={`Search  lessons… (/)`}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         aria-label="Search lessons"
@@ -72,7 +73,7 @@ export const Sidebar: React.FC = () => {
       <div className="pbar-wrap">
         <div className="pbar-label">
           <span>{progressPercent}% complete</span>
-          <span>{completedCount} / {LESSONS.length} lessons</span>
+          <span>{completedCount} / {LESSON_COUNT} lessons</span>
         </div>
         <div className="bar">
           <b style={{ width: `${progressPercent}%` }}></b>
@@ -87,7 +88,7 @@ export const Sidebar: React.FC = () => {
         ) : (
 
           filteredLessons.map(lesson => {
-            const index = LESSONS.indexOf(lesson);
+            const index = LESSON_META.indexOf(lesson);
             const isDone = Boolean(completedLessons[lesson.id]);
             const isCurrent = currentLessonIndex === index;
             const showModuleHeader = lesson.m !== lastModule;

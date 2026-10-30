@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { gradeChallenge } from '@/lib/challengeGrading';
 import { getSessionUser } from '@/lib/db';
+import { canAccessLesson } from '@/lib/entitlements';
 import { rateLimit } from '@/lib/rateLimit';
+import { LESSONS } from '@/data/lessons';
 
 export const runtime = 'nodejs';
 
@@ -78,6 +80,19 @@ export async function POST(req: NextRequest) {
 
   if (lessonId.length > 120) {
     return NextResponse.json({ error: 'Invalid lessonId' }, { status: 400 });
+  }
+
+  // 5. Entitlement: graded challenges for Pro lessons require Pro access.
+  //    Free-tier lessons stay open to any signed-in learner.
+  const lessonIndex = LESSONS.findIndex((l) => l.id === lessonId);
+  if (lessonIndex === -1) {
+    return NextResponse.json({ error: 'Unknown lesson' }, { status: 404 });
+  }
+  if (!canAccessLesson(session.user, lessonIndex)) {
+    return NextResponse.json(
+      { error: 'This challenge is part of Academy Pro.', code: 'PRO_REQUIRED' },
+      { status: 403 },
+    );
   }
 
   if (code.length > MAX_CODE_LENGTH) {

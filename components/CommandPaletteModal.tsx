@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAcademy } from '@/context/AcademyContext';
-import { LESSONS } from '@/data/lessons';
+import { LESSON_META } from '@/data/lessonMeta';
 
 export const CommandPaletteModal: React.FC = () => {
   const router = useRouter();
@@ -52,7 +52,7 @@ export const CommandPaletteModal: React.FC = () => {
     { id: 'act-exam', title: '🎓 Start Final Exam', subtitle: 'Action', action: () => { router.push('/final-exam'); setActiveModal('none'); } },
     { id: 'act-cert', title: '🏆 View Certificate of Mastery', subtitle: 'Action', action: () => { router.push('/certificate'); setActiveModal('none'); } },
     { id: 'act-theme', title: '◐ Toggle Light / Dark Theme', subtitle: 'Action', action: () => { toggleTheme(); setActiveModal('none'); } },
-    { id: 'act-complete', title: '✓ Toggle Current Lesson Complete', subtitle: 'Action', action: () => { toggleComplete(LESSONS[currentLessonIndex].id); setActiveModal('none'); } },
+    { id: 'act-complete', title: '✓ Toggle Current Lesson Complete', subtitle: 'Action', action: () => { toggleComplete(LESSON_META[currentLessonIndex].id); setActiveModal('none'); } },
     { id: 'act-backup', title: '💾 Backup / Restore Progress', subtitle: 'Action', action: () => setActiveModal('backup') },
   ];
 
@@ -68,7 +68,7 @@ export const CommandPaletteModal: React.FC = () => {
   });
 
   // Lessons
-  LESSONS.forEach((l, idx) => {
+  LESSON_META.forEach((l, idx) => {
     if (!q || l.t.toLowerCase().includes(q) || l.m.toLowerCase().includes(q)) {
       filteredItems.push({
         id: 'lesson-' + idx,

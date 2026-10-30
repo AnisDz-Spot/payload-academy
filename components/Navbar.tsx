@@ -4,8 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAcademy } from '@/context/AcademyContext';
-import { LESSONS } from '@/data/lessons';
-import { FREE_LESSON_COUNT } from '@/data/curriculum';
+import { LESSON_COUNT } from '@/data/curriculum';
 
 import { FloatingDock, FloatingDockItem } from '@/components/ui/floating-dock';
 import {
@@ -45,10 +44,6 @@ export const Navbar: React.FC = () => {
     toggleSidebar,
     completedLessons,
     streak,
-    isAdmin,
-    toggleAdmin,
-    isPro,
-    togglePro,
     soundEnabled,
     toggleSound,
     user,
@@ -87,7 +82,7 @@ export const Navbar: React.FC = () => {
   }, []);
 
   const completedCount = Object.keys(completedLessons).length;
-  const progressPct = Math.round((completedCount / LESSONS.length) * 100);
+  const progressPct = Math.round((completedCount / LESSON_COUNT) * 100);
 
   return (
     <>
@@ -119,26 +114,6 @@ export const Navbar: React.FC = () => {
 
           {/* ── RIGHT: User Progress, Search & Tools ── */}
         <div className="navbar-right-cluster">
-          {/* Admin Mode Badge Toggle */}
-          {isAdmin && (
-            <button
-              onClick={toggleAdmin}
-              className="navbar-action-btn"
-              title="Admin Mode Active (Bypassing Gating) - Click to Toggle Off"
-              style={{
-                background: 'rgba(234, 179, 8, 0.15)',
-                color: '#eab308',
-                borderColor: 'rgba(234, 179, 8, 0.4)',
-                fontSize: 12,
-                fontWeight: 700,
-                padding: '0 10px',
-                height: 32,
-              }}
-            >
-              👑 Admin
-            </button>
-          )}
-
           {/* Progress & Streak Badge */}
           <Link href="/dashboard" className="navbar-stats-chip" title="View Learning Dashboard">
             {streak > 0 && <span className="navbar-streak-fire">🔥 {streak}d</span>}
@@ -285,45 +260,6 @@ export const Navbar: React.FC = () => {
                   </div>
                 </Link>
 
-                <div className="dropdown-divider" />
-                <div className="dropdown-section-header">Overrides &amp; Controls</div>
-
-                {/* Admin Mode Toggle */}
-                <button
-                  className="navbar-dropdown-item"
-                  onClick={() => { toggleAdmin(); setToolsDropdownOpen(false); }}
-                  style={{ background: isAdmin ? 'rgba(234, 179, 8, 0.08)' : undefined }}
-                >
-                  <span className="dropdown-icon">👑</span>
-                  <div>
-                    <div className="dropdown-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      Admin Mode
-                      <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 99, background: isAdmin ? '#eab308' : 'var(--border)', color: isAdmin ? '#000' : 'var(--muted)', fontWeight: 700 }}>
-                        {isAdmin ? 'ACTIVE' : 'OFF'}
-                      </span>
-                    </div>
-                    <div className="dropdown-sub">Bypass prerequisites for Exam</div>
-                  </div>
-                </button>
-
-                {/* Pro Membership Toggle */}
-                <button
-                  className="navbar-dropdown-item"
-                  onClick={() => { togglePro(); setToolsDropdownOpen(false); }}
-                  style={{ background: isPro ? 'rgba(249, 115, 22, 0.08)' : undefined }}
-                >
-                  <span className="dropdown-icon">⚡</span>
-                  <div>
-                    <div className="dropdown-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      Pro Subscription
-                      <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 99, background: isPro ? '#f97316' : 'var(--border)', color: isPro ? '#fff' : 'var(--muted)', fontWeight: 700 }}>
-                        {isPro ? 'UNLOCKED' : 'FREE TIER'}
-                      </span>
-                    </div>
-                    <div className="dropdown-sub">Simulate Pro access (Lessons {FREE_LESSON_COUNT + 1}–{LESSONS.length})</div>
-                  </div>
-                </button>
-
                 {/* Sound FX Toggle */}
                 <button
                   className="navbar-dropdown-item"
@@ -376,7 +312,7 @@ export const Navbar: React.FC = () => {
                   <span className="dropdown-icon">🗂️</span>
                   <div>
                     <div className="dropdown-label">Lesson Library</div>
-                    <div className="dropdown-sub">Index of all {LESSONS.length} lessons</div>
+                    <div className="dropdown-sub">Index of all {LESSON_COUNT} lessons</div>
                   </div>
                 </Link>
 
@@ -561,7 +497,7 @@ export const Navbar: React.FC = () => {
                     <span className="dropdown-icon">⚡</span>
                     <div>
                       <div className="dropdown-label">Upgrade to Pro</div>
-                      <div className="dropdown-sub">Unlock all {LESSONS.length} lessons &amp; certificate</div>
+                      <div className="dropdown-sub">Unlock all {LESSON_COUNT} lessons &amp; certificate</div>
                     </div>
                   </Link>
 
@@ -619,13 +555,6 @@ export const Navbar: React.FC = () => {
             })}
           </div>
           <div className="navbar-mobile-actions">
-            <button
-              className="navbar-mobile-action-btn"
-              onClick={() => { toggleAdmin(); setMobileNavOpen(false); }}
-              style={{ color: isAdmin ? '#eab308' : undefined }}
-            >
-              👑 Admin Mode: {isAdmin ? 'Active (Bypassed)' : 'Off'}
-            </button>
             <button
               className="navbar-mobile-action-btn"
               onClick={() => { setActiveModal('ai'); setMobileNavOpen(false); }}

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { retrieveLessons, buildRetrievalContext, type RetrievedLesson } from '@/lib/lessonRetrieval';
+import { getSessionUser } from '@/lib/db';
+import { hasProAccess } from '@/lib/entitlements';
+import { getClientIp, rateLimit } from '@/lib/rateLimit';
 
 const PAYLOAD_SYSTEM_PROMPT = `You are the official Payload 3.x Senior AI Architect and Instructor for Payload Academy.
 You specialize exclusively in:
@@ -15,6 +18,60 @@ Always provide concise, accurate, production-ready TypeScript code examples targ
 
 export async function POST(req: NextRequest) {
   try {
+    // ── Abuse & entitlement gate ────────────────────────────────
+    // The AI tutor is a Pro feature. Gate it on the server (never on the
+    // client flag) and rate limit per IP + per user, since every call costs
+    // tokens against our provider keys.
+    const ip = getClientIp(req);
+    const ipLimit = rateLimit(`chat:ip:${ip}`, 30, 60_000);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please slow down.' },
+        { status: 429, headers: { 'Retry-After': String(ipLimit.retryAfterSec) } },
+      );
+    }
+
+    const sessionToken = req.cookies.get('pa_session')?.value;
+    if (!sessionToken) {
+      return NextResponse.json(
+        { error: 'Sign in to use the AI Payload Assistant.', code: 'AUTH_REQUIRED' },
+        { status: 401 },
+      );
+    }
+
+    let session: Awaited<ReturnType<typeof getSessionUser>> = null;
+    try {
+      session = await getSessionUser(sessionToken);
+    } catch (err) {
+      console.error('[chat] session lookup failed', err);
+      return NextResponse.json(
+        { error: 'The assistant is temporarily unavailable.' },
+        { status: 503 },
+      );
+    }
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Your session has expired. Please sign in again.', code: 'AUTH_REQUIRED' },
+        { status: 401 },
+      );
+    }
+
+    if (!hasProAccess(session.user)) {
+      return NextResponse.json(
+        { error: 'The AI Payload Assistant is part of Academy Pro.', code: 'PRO_REQUIRED' },
+        { status: 403 },
+      );
+    }
+
+    const userLimit = rateLimit(`chat:user:${session.user.id}`, 20, 60_000);
+    if (!userLimit.allowed) {
+      return NextResponse.json(
+        { error: 'You have reached the AI rate limit. Try again in a minute.' },
+        { status: 429, headers: { 'Retry-After': String(userLimit.retryAfterSec) } },
+      );
+    }
+
     const { messages } = await req.json();
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Invalid messages array' }, { status: 400 });
