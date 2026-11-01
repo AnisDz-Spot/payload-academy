@@ -1650,7 +1650,7 @@ export const readingTimePlugin = (config: Config) => config
 `,
     solutionCode: `import type { Config } from 'payload'
 
-export const readingTimePlugin = (config) => ({
+export const readingTimePlugin = (config: Config) => ({
   ...config,
   fields: [...config.fields, { name: 'readingTime', type: 'number' }],
 })
@@ -1687,7 +1687,7 @@ export const Tenants: CollectionConfig = {
 // Scope queries to the active tenant
 export const tenantScoped = () => true
 `,
-    solutionCode: `import type { CollectionConfig } from 'payload'
+    solutionCode: `import type { Access, CollectionConfig } from 'payload'
 
 export const Tenants: CollectionConfig = {
   slug: 'tenants',
@@ -1697,7 +1697,7 @@ export const Tenants: CollectionConfig = {
   ],
 }
 
-export const tenantScoped = ({ req: { user } }) => {
+export const tenantScoped: Access = ({ req: { user } }) => {
   if (!user) return false
   return { tenant: { equals: user.tenant } }
 }
@@ -1717,12 +1717,16 @@ export const tenantScoped = ({ req: { user } }) => {
   },
 
   ai: {
-    starterCode: `export async function embedOnPublish({ doc }) {
+    starterCode: `type EmbeddableDoc = { title: string; embedding?: number[] }
+
+export async function embedOnPublish({ doc }: { doc: EmbeddableDoc }) {
   // Generate an embedding and attach it to the document
   return doc
 }
 `,
-    solutionCode: `export async function embedOnPublish({ doc }) {
+    solutionCode: `type EmbeddableDoc = { title: string; embedding?: number[] }
+
+export async function embedOnPublish({ doc }: { doc: EmbeddableDoc }) {
   const res = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: { Authorization: \`Bearer \${process.env.OPENAI_API_KEY}\` },
@@ -2014,7 +2018,7 @@ export const Posts: CollectionConfig = {
     starterCode: `import { getPayload } from 'payload'
 import config from '@payload-config'
 
-export default async function PostPage({ params }) {
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const payload = await getPayload({ config })
   // Fetch the post by slug and render metadata
   return null
@@ -2024,11 +2028,12 @@ export default async function PostPage({ params }) {
 import config from '@payload-config'
 import { notFound } from 'next/navigation'
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   const payload = await getPayload({ config })
   const { docs } = await payload.find({
     collection: 'posts',
-    where: { slug: { equals: params.slug } },
+    where: { slug: { equals: slug } },
   })
   if (!docs.length) {
     notFound()
@@ -2152,19 +2157,27 @@ export const Orders: CollectionConfig = {
 
   ecomm2: {
     starterCode: `import Stripe from 'stripe'
+import type { Payload } from 'payload'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
 
-export async function handleWebhook(req, payload) {
+export async function handleWebhook(
+  req: { body: string; headers: Record<string, string> },
+  payload: Payload,
+) {
   // Verify the Stripe signature and fulfil the order
   return null
 }
 `,
     solutionCode: `import Stripe from 'stripe'
+import type { Payload } from 'payload'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '')
 
-export async function handleWebhook(req, payload) {
+export async function handleWebhook(
+  req: { body: string; headers: Record<string, string> },
+  payload: Payload,
+) {
   const event = stripe.webhooks.constructEvent(
     req.body,
     req.headers['stripe-signature'],
