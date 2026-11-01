@@ -207,18 +207,20 @@ export const payloadAdvantage = {
   },
 
   install: {
-    starterCode: `// Configure next.config.mjs to integrate Payload 3.x
+    starterCode: `// Configure next.config.ts to integrate Payload 3.x
 import { withPayload } from '@payloadcms/next/withPayload'
+import type { NextConfig } from 'next'
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   // Add configuration
 }
 
 export default nextConfig
 `,
     solutionCode: `import { withPayload } from '@payloadcms/next/withPayload'
+import type { NextConfig } from 'next'
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   reactStrictMode: true,
 }
 

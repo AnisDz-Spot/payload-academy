@@ -133,12 +133,12 @@ pnpm add @payloadcms/db-postgres   # For PostgreSQL
 # OR: pnpm add @payloadcms/db-mongodb    # For MongoDB</code></pre></div>
 
 <h3>Step 2.1: Wrap Next.js Configuration</h3>
-<p>Payload needs to configure Webpack/Turbopack aliases and GraphQL loaders. Wrap your <code>next.config.mjs</code>:</p>
+<p>Payload needs to configure Webpack/Turbopack aliases and GraphQL loaders. Wrap your <code>next.config.ts</code>:</p>
 
-<div class="cb"><div class="fn">next.config.mjs</div><pre><code>import { withPayload } from '@payloadcms/next/withPayload'
+<div class="cb"><div class="fn">next.config.ts</div><pre><code>import { withPayload } from '@payloadcms/next/withPayload'
+import type { NextConfig } from 'next'
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   // your custom Next.js configuration options here
   experimental: {
     // optional experimental features
@@ -259,7 +259,7 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000</code></pre></div>
 │   ├── payload.config.ts          # Master Payload Config
 │   └── payload-types.ts           # Generated TypeScript Interfaces (Auto-generated)
 │
-├── next.config.mjs                # Next.js configuration with withPayload()
+├── next.config.ts                # Next.js configuration with withPayload()
 ├── tsconfig.json
 └── package.json</code></pre></div>
 
