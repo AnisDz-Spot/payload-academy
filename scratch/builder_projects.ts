@@ -1,5 +1,7 @@
-// scratch/builder_projects.js
-module.exports = [
+import type { Lesson } from '../data/types';
+
+// scratch/builder_projects.ts
+const lessons: Lesson[] = [
   {
     id: "proj1",
     m: "Project: Blog",
@@ -288,3 +290,5 @@ export const createCheckoutSession: PayloadHandler = async (req) => {
 `
   }
 ];
+
+export default lessons;

@@ -1,19 +1,23 @@
-// scratch/assemble_lessons.js
-const fs = require('fs');
-const path = require('path');
+// scratch/assemble_lessons.ts
+// One-off content pipeline: merges the lesson builder modules into
+// `data/lessons.ts`. Run from the project root:
+//   npx tsx scratch/assemble_lessons.ts
+import fs from 'node:fs';
+import path from 'node:path';
 
-const b1 = require('./builder_foundations_core');
-const b2 = require('./builder_security_content');
-const b3 = require('./builder_data_admin');
-const b4 = require('./builder_advanced_arch');
-const b5 = require('./builder_projects');
+import type { Lesson } from '../data/types';
+import b1 from './builder_foundations_core';
+import b2 from './builder_security_content';
+import b3 from './builder_data_admin';
+import b4 from './builder_advanced_arch';
+import b5 from './builder_projects';
 
-const allLessons = [...b1, ...b2, ...b3, ...b4, ...b5];
+const allLessons: Lesson[] = [...b1, ...b2, ...b3, ...b4, ...b5];
 
 console.log(`Loaded ${allLessons.length} lessons.`);
 
 // Function to calculate accurate reading minutes based on text + code
-function computeReadingTime(html) {
+function computeReadingTime(html: string): number {
   const text = html
     .replace(/<[^>]+>/g, ' ')
     .replace(/&amp;/g, '&')
@@ -29,7 +33,7 @@ function computeReadingTime(html) {
 }
 
 // Attach computed readingMins if not set
-const finalLessons = allLessons.map((l) => ({
+const finalLessons: Lesson[] = allLessons.map((l) => ({
   ...l,
   readingMins: l.readingMins || computeReadingTime(l.c),
 }));
@@ -39,7 +43,7 @@ const fileContent = `import { Lesson } from './types';
 export const LESSONS: Lesson[] = ${JSON.stringify(finalLessons, null, 2)};
 `;
 
-const outputPath = path.resolve(__dirname, '../data/lessons.ts');
+const outputPath = path.resolve(process.cwd(), 'data/lessons.ts');
 fs.writeFileSync(outputPath, fileContent, 'utf-8');
 
 console.log(`✅ Successfully compiled ${finalLessons.length} deep lessons to ${outputPath}!`);

@@ -1,5 +1,7 @@
-// scratch/builder_advanced_arch.js
-module.exports = [
+import type { Lesson } from '../data/types';
+
+// scratch/builder_advanced_arch.ts
+const lessons: Lesson[] = [
   {
     id: "webhooks",
     m: "Advanced Architecture",
@@ -543,3 +545,5 @@ export default async function BlogPostPage({
 `
   }
 ];
+
+export default lessons;

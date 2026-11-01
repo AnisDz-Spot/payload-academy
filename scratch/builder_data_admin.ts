@@ -1,5 +1,7 @@
-// scratch/builder_data_admin.js
-module.exports = [
+import type { Lesson } from '../data/types';
+
+// scratch/builder_data_admin.ts
+const lessons: Lesson[] = [
   {
     id: "api",
     m: "Using the Data",
@@ -519,3 +521,5 @@ export default async function CustomDashboard() {
 `
   }
 ];
+
+export default lessons;

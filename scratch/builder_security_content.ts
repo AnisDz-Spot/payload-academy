@@ -1,5 +1,7 @@
-// scratch/builder_security_content.js
-module.exports = [
+import type { Lesson } from '../data/types';
+
+// scratch/builder_security_content.ts
+const lessons: Lesson[] = [
   {
     id: "access",
     m: "Security & Logic",
@@ -688,3 +690,5 @@ export default buildConfig({
 `
   }
 ];
+
+export default lessons;

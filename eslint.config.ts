@@ -12,7 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Dev-only lesson builder scripts (CommonJS tooling, not part of the app):
+    // Dev-only content builder scripts (one-off tooling, not part of the app):
     "scratch/**",
   ]),
 ]);

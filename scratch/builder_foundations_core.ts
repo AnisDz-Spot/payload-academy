@@ -1,5 +1,7 @@
-// scratch/builder_foundations_core.js
-module.exports = [
+import type { Lesson } from '../data/types';
+
+// scratch/builder_foundations_core.ts
+const lessons: Lesson[] = [
   {
     id: "intro",
     m: "Foundations",
@@ -1092,3 +1094,5 @@ console.log(techCategory.posts.totalDocs) // Total number of posts in category</
 `
   }
 ];
+
+export default lessons;

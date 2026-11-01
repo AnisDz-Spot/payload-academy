@@ -1,5 +1,11 @@
-// Payload Academy service worker — offline shell for study pages.
-// Registered only in production (see components/ServiceWorkerRegister.tsx).
+// The offline service worker is authored here as a string so the repository
+// contains no JavaScript source files. It is served from `/sw.js` (the URL a
+// worker must live at to control the whole origin) and registered only in
+// production by `components/ServiceWorkerRegister.tsx`.
+export const dynamic = 'force-static';
+
+const serviceWorker = `// Payload Academy service worker - offline shell for study pages.
+// Generated from app/sw.js/route.ts - do not edit the served copy by hand.
 const CACHE = 'payload-academy-v1';
 const PRECACHE = ['/', '/flashcards', '/glossary', '/study-guide'];
 
@@ -58,3 +64,14 @@ self.addEventListener('fetch', (event) => {
     }),
   );
 });
+`;
+
+export function GET() {
+  return new Response(serviceWorker, {
+    headers: {
+      'Content-Type': 'application/javascript; charset=utf-8',
+      'Cache-Control': 'public, max-age=0, must-revalidate',
+      'Service-Worker-Allowed': '/',
+    },
+  });
+}
